@@ -1,0 +1,9 @@
+Context ID,Context Type,Description,Phase
+101,Positive,Topsoil,Modern
+102,Positive,Rubble layer,Post-Medieval
+103,Negative,Robber trench cut,Post-Medieval
+104,Positive,Wall foundation,Medieval
+105,Positive,Floor surface,Medieval
+106,Negative,Pit cut,Roman
+107,Positive,Pit fill,Roman
+108,Positive,Natural subsoil,Geological

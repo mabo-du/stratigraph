@@ -1,0 +1,13 @@
+Project: Harris-Matrix-Generator
+Source: Supplementary research prompt (generated)
+======================================================================
+
+CONTEXT:
+Supplementary research prompt covering practical aspects not addressed
+in the core domain research prompts from the scoping document.
+
+──────────────────────────────────────────────────────────────────────
+
+SUPPLEMENTARY RESEARCH PROMPT:
+
+**Desktop app distribution for archaeologists**: What are the most effective strategies for distributing a desktop application (Electron/Tauri) to archaeologists who are not technically sophisticated? Compare: direct download installers (Windows MSI, macOS DMG, Linux AppImage), Homebrew/winget/Flatpak, and web-only deployment. What installation barriers do archaeologists commonly encounter? How do successful open-source archaeology tools (QGIS plugins, OpenDroneMap) handle distribution and updates? What auto-update mechanisms work best for Electron and Tauri apps?

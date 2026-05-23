@@ -1,0 +1,12 @@
+Project: Harris-Matrix-Generator
+Source: open_heritage_software_project_scopes.md — Project 3
+======================================================================
+
+CONTEXT:
+I am building a free, open-source Harris Matrix generator for archaeological stratigraphy. I need comprehensive technical and domain research covering:
+
+──────────────────────────────────────────────────────────────────────
+
+RESEARCH PROMPT 5:
+
+**GIS integration**: How have researchers proposed integrating Harris Matrix data with GIS spatial data? What GeoJSON or GeoPackage schemas have been proposed for attaching geometric context data to stratigraphic units? Are there existing open-source implementations?

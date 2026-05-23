@@ -1,0 +1,13 @@
+Project: Harris-Matrix-Generator
+Source: Supplementary research prompt (generated)
+======================================================================
+
+CONTEXT:
+Supplementary research prompt covering practical aspects not addressed
+in the core domain research prompts from the scoping document.
+
+──────────────────────────────────────────────────────────────────────
+
+SUPPLEMENTARY RESEARCH PROMPT:
+
+**Data import from field recording systems**: What data export formats do the major archaeological field recording systems (ARK, FAIMS, iDig, Heurist, and custom FileMaker/Excel systems) use for stratigraphic relationship data? What is the minimum data structure needed to generate a Harris Matrix from an external source (context number, relationship type, related context)? How do existing Harris Matrix tools (ArchEd, Stratify) handle data import? What CSV/JSON schema would provide the most universal import capability?

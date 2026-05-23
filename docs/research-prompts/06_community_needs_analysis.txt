@@ -1,0 +1,12 @@
+Project: Harris-Matrix-Generator
+Source: open_heritage_software_project_scopes.md — Project 3
+======================================================================
+
+CONTEXT:
+I am building a free, open-source Harris Matrix generator for archaeological stratigraphy. I need comprehensive technical and domain research covering:
+
+──────────────────────────────────────────────────────────────────────
+
+RESEARCH PROMPT 6:
+
+**Community requests**: Search open-archaeo.info, Reddit (r/Archaeology, r/AskArchaeology), and archaeology digital methods blogs for specific feature requests regarding Harris Matrix software. What do field archaeologists most want a modern tool to do?

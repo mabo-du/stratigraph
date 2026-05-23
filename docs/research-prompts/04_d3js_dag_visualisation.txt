@@ -1,0 +1,12 @@
+Project: Harris-Matrix-Generator
+Source: open_heritage_software_project_scopes.md — Project 3
+======================================================================
+
+CONTEXT:
+I am building a free, open-source Harris Matrix generator for archaeological stratigraphy. I need comprehensive technical and domain research covering:
+
+──────────────────────────────────────────────────────────────────────
+
+RESEARCH PROMPT 4:
+
+**Graph layout algorithms**: What hierarchical DAG layout algorithms are used for automated graph drawing? Compare Sugiyama (layered), Coffman-Graham, and force-directed layouts for the specific case of Harris Matrices. What are the known aesthetic issues with auto-layout for stratigraphic graphs and how are they addressed?
