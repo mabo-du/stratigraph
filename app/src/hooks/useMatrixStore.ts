@@ -18,6 +18,7 @@ function extractUndoable(state: MatrixState): UndoableState {
     contexts: state.contexts,
     observations: state.observations,
     phases: state.phases,
+    events: state.events,
     positions: state.positions,
   };
 }
@@ -28,6 +29,7 @@ function applyUndoable(state: MatrixState, undoable: UndoableState): MatrixState
     contexts: undoable.contexts,
     observations: undoable.observations,
     phases: undoable.phases,
+    events: undoable.events,
     positions: undoable.positions,
   };
 }
@@ -126,6 +128,7 @@ function matrixReducer(state: MatrixState, action: MatrixAction): MatrixState {
         ...pushHistory(),
         contexts: action.contexts,
         observations: action.observations,
+        events: action.events,
         positions: {},
         selectedContextId: null,
       };

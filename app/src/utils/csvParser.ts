@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * csvParser.ts — Utilities for parsing raw archaeological CSV exports
  * exports: parseCsvFile, applyContextMapping, applyObservationMapping
@@ -42,6 +43,9 @@ export interface ContextMapping {
   idColumn: string;
   typeColumn?: string;
   descriptionColumn?: string;
+  centroidXColumn?: string;
+  centroidYColumn?: string;
+  centroidZColumn?: string;
 }
 
 export interface ObservationMapping {
@@ -89,11 +93,40 @@ function normalizeRelationshipType(val: string, fallback: RelationshipType): Rel
 }
 
 export function applyContextMapping(rows: Record<string, any>[], mapping: ContextMapping): Context[] {
-  return rows.map((row) => ({
-    id: String(row[mapping.idColumn] || '').trim(),
-    type: mapping.typeColumn ? normalizeContextType(row[mapping.typeColumn]) : ContextType.Unknown,
-    description: mapping.descriptionColumn ? row[mapping.descriptionColumn] : undefined
-  })).filter(c => c.id); // Must have an ID
+  return rows.map((row) => {
+    const id = String(row[mapping.idColumn] || '').trim();
+    if (!id) return null;
+    
+    let spatial: import('../models/hmdp').SpatialMetadata | undefined;
+    
+    if (mapping.centroidXColumn || mapping.centroidYColumn || mapping.centroidZColumn) {
+      const xStr = mapping.centroidXColumn ? row[mapping.centroidXColumn] : undefined;
+      const yStr = mapping.centroidYColumn ? row[mapping.centroidYColumn] : undefined;
+      const zStr = mapping.centroidZColumn ? row[mapping.centroidZColumn] : undefined;
+      
+      const x = parseFloat(xStr);
+      const y = parseFloat(yStr);
+      const z = parseFloat(zStr);
+      
+      // We need at least X and Y to define a 2D centroid
+      if (!isNaN(x) && !isNaN(y)) {
+        spatial = {
+          centroid: {
+            x,
+            y,
+            z: !isNaN(z) ? z : undefined
+          }
+        };
+      }
+    }
+    
+    return {
+      id,
+      type: mapping.typeColumn ? normalizeContextType(row[mapping.typeColumn]) : ContextType.Unknown,
+      description: mapping.descriptionColumn ? row[mapping.descriptionColumn] : undefined,
+      spatial
+    } as Context;
+  }).filter((c): c is Context => c !== null);
 }
 
 export function applyObservationMapping(rows: Record<string, any>[], mapping: ObservationMapping): Observation[] {
@@ -111,4 +144,22 @@ export function applyObservationMapping(rows: Record<string, any>[], mapping: Ob
       relationshipType: relType
     };
   }).filter(o => o.source && o.target); // Both ends of the edge must be present
+}
+
+export interface EventMapping {
+  idColumn: string;
+  contextIdColumn: string;
+  nameColumn?: string;
+  rDateColumn?: string;
+  typeColumn?: string;
+}
+
+export function applyEventMapping(rows: Record<string, any>[], mapping: EventMapping): import('../models/hmdp').Event[] {
+  return rows.map((row) => ({
+    id: String(row[mapping.idColumn] || '').trim(),
+    contextId: String(row[mapping.contextIdColumn] || '').trim(),
+    name: mapping.nameColumn ? String(row[mapping.nameColumn] || '').trim() : 'Event',
+    rDate: mapping.rDateColumn ? String(row[mapping.rDateColumn] || '').trim() : undefined,
+    type: mapping.typeColumn ? String(row[mapping.typeColumn] || '').trim() : undefined,
+  })).filter(e => e.id && e.contextId);
 }

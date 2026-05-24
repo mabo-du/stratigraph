@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * fileUtils.ts — Save/load project JSON, export PNG/SVG.
  * exports: saveProject, loadProject, exportPNG, exportSVGFallback
@@ -40,7 +41,7 @@ export function saveProject(state: MatrixState) {
 
 export async function loadProject(
   file: File
-): Promise<{ meta: MatrixState['meta']; contexts: any[]; observations: any[]; phases: any[]; positions: any }> {
+): Promise<{ meta: MatrixState['meta']; contexts: any[]; observations: any[]; events: any[]; phases: any[]; positions: any }> {
   const text = await file.text();
   const data = JSON.parse(text);
 
@@ -53,6 +54,7 @@ export async function loadProject(
     },
     contexts: data.contexts ?? [],
     observations: data.observations ?? [],
+    events: data.events ?? [],
     phases: data.phases ?? [],
     positions: data.positions ?? {},
   };

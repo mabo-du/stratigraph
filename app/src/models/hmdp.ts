@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * hmdp.ts — Core Harris Matrix Data Package (HMDP) definitions.
  * exports: Context, Observation, DataPackage, RelationshipType, ContextType, Phase
@@ -23,12 +24,20 @@ export const ContextType = {
 
 export type ContextType = typeof ContextType[keyof typeof ContextType];
 
+export interface SpatialMetadata {
+  crs?: string;         // e.g. "EPSG:4326"
+  centroid?: { x: number; y: number; z?: number };
+  boundingBox?: { minX: number; minY: number; minZ?: number; maxX: number; maxY: number; maxZ?: number };
+  geoJSON?: any;        // e.g. FeatureCollection
+}
+
 export interface Context {
   id: string;          // The unique unit identifier (SU_number)
   type: ContextType;
   description?: string;
   period?: string;
   phase?: string;      // Phase ID reference
+  spatial?: SpatialMetadata;
 }
 
 export interface Observation {
@@ -44,10 +53,19 @@ export interface Phase {
   color: string;
 }
 
+export interface Event {
+  id: string;          // e.g. Lab Number "Beta-12345"
+  contextId: string;   // The context it belongs to
+  name: string;        // Human readable name (e.g. "Charcoal Lens")
+  rDate?: string;      // Optional radiocarbon date string "1000, 25"
+  type?: string;       // "C14", "Coin", "TL"
+}
+
 export interface DataPackage {
   name: string;
   created: string;
   contexts: Context[];
   observations: Observation[];
   phases: Phase[];
+  events: Event[];
 }

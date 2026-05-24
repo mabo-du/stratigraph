@@ -3,7 +3,7 @@
  * used_by: useMatrixStore.ts
  */
 
-import type { Context, Observation, Phase } from './hmdp';
+import type { Context, Observation, Phase, Event } from './hmdp';
 
 export interface ProjectMeta {
   projectName: string;
@@ -22,6 +22,7 @@ export interface UndoableState {
   contexts: Context[];
   observations: Observation[];
   phases: Phase[];
+  events: Event[];
   positions: Record<string, LayoutPosition>;
 }
 
@@ -50,6 +51,7 @@ export const INITIAL_STATE: MatrixState = {
   },
   contexts: [],
   observations: [],
+  events: [],
   phases: [
     { id: 'phase-1', name: 'Phase 1', color: DEFAULT_PHASE_COLORS[0] },
   ],
@@ -75,7 +77,7 @@ export type MatrixAction =
   | { type: 'DELETE_PHASE'; id: string }
   | { type: 'SET_POSITIONS'; positions: Record<string, LayoutPosition> }
   | { type: 'UPDATE_POSITION'; id: string; position: LayoutPosition }
-  | { type: 'IMPORT_DATA'; contexts: Context[]; observations: Observation[] }
+  | { type: 'IMPORT_DATA'; contexts: Context[]; observations: Observation[]; events: Event[] }
   | { type: 'LOAD_PROJECT'; state: MatrixState }
   | { type: 'SET_META'; meta: Partial<ProjectMeta> }
   | { type: 'SELECT_CONTEXT'; id: string | null }

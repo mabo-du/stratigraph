@@ -5,7 +5,8 @@
 import React, { useRef, useState } from 'react';
 import {
   Undo2, Redo2, LayoutDashboard, Upload, Save, FolderOpen,
-  Download, ChevronDown, Maximize2, BoxSelect
+  Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun, 
+  Grid3X3, Flame
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -23,9 +24,18 @@ interface ToolbarProps {
   onExportPNG: () => void;
   onExportSVG: () => void;
   onExportPDF: () => void;
+  onExportOxCal: () => void;
+  onExportHoardText: () => void;
+  onExportHoardJson: () => void;
   contextCount: number;
   showPhaseGroups: boolean;
   onTogglePhaseGroups: () => void;
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
+  publicationMode: boolean;
+  onTogglePublicationMode: () => void;
+  heatmapMode: boolean;
+  onToggleHeatmapMode: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -43,9 +53,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onExportPNG,
   onExportSVG,
   onExportPDF,
+  onExportOxCal,
+  onExportHoardText,
+  onExportHoardJson,
   contextCount,
   showPhaseGroups,
-  onTogglePhaseGroups
+  onTogglePhaseGroups,
+  theme,
+  onToggleTheme,
+  publicationMode,
+  onTogglePublicationMode,
+  heatmapMode,
+  onToggleHeatmapMode
 }) => {
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(projectName);
@@ -65,7 +84,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       {/* Brand */}
       <div className="toolbar-brand">
         <span className="toolbar-logo">⛏</span>
-        <span className="toolbar-title">Harris Matrix</span>
+        <span className="toolbar-title">StratiGraph</span>
         {contextCount > 0 && (
           <span className="toolbar-badge">{contextCount} SU</span>
         )}
@@ -129,6 +148,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         {/* Layout */}
         <div className="toolbar-group">
           <button
+            className={`tb-btn tb-btn--labeled ${publicationMode ? 'tb-btn--accent' : ''}`}
+            onClick={onTogglePublicationMode}
+            disabled={contextCount === 0}
+            title="Publication Mode (Free layout)"
+          >
+            <Grid3X3 size={15} />
+            <span>Pub Mode</span>
+          </button>
+          <button
             className={`tb-btn tb-btn--labeled ${showPhaseGroups ? 'tb-btn--accent' : ''}`}
             onClick={onTogglePhaseGroups}
             disabled={contextCount === 0}
@@ -143,6 +171,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </button>
           <button className="tb-btn" onClick={onFitView} title="Fit view" aria-label="Fit view">
             <Maximize2 size={15} />
+          </button>
+        </div>
+
+        <div className="toolbar-divider" />
+        
+        {/* Visuals */}
+        <div className="toolbar-group">
+          <button
+            className={`tb-btn ${heatmapMode ? 'tb-btn--accent' : ''}`}
+            onClick={onToggleHeatmapMode}
+            disabled={contextCount === 0}
+            title="Toggle Heatmap Mode (Finds Density)"
+          >
+            <Flame size={15} />
+          </button>
+          <button className="tb-btn" onClick={onToggleTheme} title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}>
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
         </div>
 
@@ -220,6 +265,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   onClick={() => { onExportPDF(); setShowExportMenu(false); }}
                 >
                   Export as PDF
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportOxCal(); setShowExportMenu(false); }}
+                >
+                  Export for Libby (.oxcal)
+                </button>
+                <div style={{ height: 1, background: 'var(--border-2)', margin: '4px 0' }} />
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportHoardText(); setShowExportMenu(false); }}
+                >
+                  Export HOARD Prompt (.txt)
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportHoardJson(); setShowExportMenu(false); }}
+                >
+                  Export HOARD Payload (.json)
                 </button>
               </div>
             </>

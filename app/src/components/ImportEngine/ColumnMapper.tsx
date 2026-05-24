@@ -3,7 +3,7 @@ import type { ContextMapping, ObservationMapping } from '../../utils/csvParser';
 import { RelationshipType } from '../../models/hmdp';
 
 interface ColumnMapperProps {
-  type: 'context' | 'observation';
+  type: 'context' | 'observation' | 'event';
   headers: string[];
   onMappingComplete: (mapping: any) => void;
   onCancel: () => void;
@@ -14,29 +14,38 @@ export const ColumnMapper: React.FC<ColumnMapperProps> = ({ type, headers, onMap
   const [observationMapping, setObservationMapping] = useState<Partial<ObservationMapping>>({
     defaultRelationship: RelationshipType.Above
   });
+  const [eventMapping, setEventMapping] = useState<Partial<import('../../utils/csvParser').EventMapping>>({});
 
   const handleSelect = (field: string, value: string) => {
     if (type === 'context') {
       setContextMapping(prev => ({ ...prev, [field]: value }));
-    } else {
+    } else if (type === 'observation') {
       setObservationMapping(prev => ({ ...prev, [field]: value }));
+    } else {
+      setEventMapping(prev => ({ ...prev, [field]: value }));
     }
   };
 
   const isReady = type === 'context'
     ? !!contextMapping.idColumn
-    : !!(observationMapping.sourceColumn && observationMapping.targetColumn);
+    : type === 'observation'
+    ? !!(observationMapping.sourceColumn && observationMapping.targetColumn)
+    : !!(eventMapping.idColumn && eventMapping.contextIdColumn);
 
   const handleSubmit = () => {
     if (isReady) {
-      onMappingComplete(type === 'context' ? contextMapping : observationMapping);
+      if (type === 'context') onMappingComplete(contextMapping);
+      else if (type === 'observation') onMappingComplete(observationMapping);
+      else onMappingComplete(eventMapping);
     }
   };
 
   const renderSelect = (label: string, field: string, required = false) => {
     const current = type === 'context'
       ? (contextMapping as any)[field] || ''
-      : (observationMapping as any)[field] || '';
+      : type === 'observation'
+      ? (observationMapping as any)[field] || ''
+      : (eventMapping as any)[field] || '';
 
     return (
       <div className="form-row">
@@ -69,6 +78,11 @@ export const ColumnMapper: React.FC<ColumnMapperProps> = ({ type, headers, onMap
           {renderSelect('Context ID — unique identifier (e.g. SU number)', 'idColumn', true)}
           {renderSelect('Context Type — Positive / Negative / Cut / Layer (optional)', 'typeColumn')}
           {renderSelect('Description — free text field (optional)', 'descriptionColumn')}
+          <div style={{ height: 1, background: 'var(--border-2)', margin: '8px 0' }} />
+          <p style={{ color: 'var(--text-2)', fontSize: '0.8rem', marginBottom: -8 }}>Spatial Metadata (Optional for GIS mapping)</p>
+          {renderSelect('Centroid X (Easting)', 'centroidXColumn')}
+          {renderSelect('Centroid Y (Northing)', 'centroidYColumn')}
+          {renderSelect('Centroid Z (Elevation)', 'centroidZColumn')}
         </>
       )}
 
@@ -77,6 +91,16 @@ export const ColumnMapper: React.FC<ColumnMapperProps> = ({ type, headers, onMap
           {renderSelect('Source Context — the "upper" or "earlier" unit', 'sourceColumn', true)}
           {renderSelect('Target Context — the "lower" or "later" unit', 'targetColumn', true)}
           {renderSelect('Relationship Type — Above / Below / Equals (optional if all rows are "Above")', 'relationshipColumn')}
+        </>
+      )}
+
+      {type === 'event' && (
+        <>
+          {renderSelect('Event ID / Lab Number — unique identifier (e.g. Beta-12345)', 'idColumn', true)}
+          {renderSelect('Context ID — the layer this event dates', 'contextIdColumn', true)}
+          {renderSelect('Name / Material — (e.g. Charcoal Lens)', 'nameColumn')}
+          {renderSelect('Radiocarbon Date — (e.g. "1000, 25")', 'rDateColumn')}
+          {renderSelect('Dating Type — (e.g. C14, Coin)', 'typeColumn')}
         </>
       )}
 

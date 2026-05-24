@@ -76,6 +76,32 @@ describe('csvParser', () => {
       const result = applyContextMapping(rows, mapping);
       expect(result[0].type).toBe(ContextType.Unknown);
     });
+
+    test('parses spatial centroid coordinates if mapped', () => {
+      const mapping: ContextMapping = {
+        idColumn: 'id',
+        centroidXColumn: 'easting',
+        centroidYColumn: 'northing',
+        centroidZColumn: 'elevation',
+      };
+      
+      const rows = [
+        { id: '1', easting: '500.25', northing: '1000.5', elevation: '12.4' },
+        { id: '2', easting: '501', northing: '1002' }, // Missing Z
+        { id: '3', easting: 'invalid', northing: '1000' }, // Invalid X
+      ];
+      
+      const result = applyContextMapping(rows, mapping);
+      
+      // Row 1: Fully valid 3D centroid
+      expect(result[0].spatial?.centroid).toEqual({ x: 500.25, y: 1000.5, z: 12.4 });
+      
+      // Row 2: Valid 2D centroid (no Z)
+      expect(result[1].spatial?.centroid).toEqual({ x: 501, y: 1002, z: undefined });
+      
+      // Row 3: Invalid X means no centroid should be created
+      expect(result[2].spatial?.centroid).toBeUndefined();
+    });
   });
 
   // ── applyObservationMapping ──────────────────────────────────────────────

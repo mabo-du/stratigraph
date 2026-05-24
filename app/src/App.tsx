@@ -8,6 +8,8 @@ import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
 import { saveProject, loadProject } from './utils/fileUtils';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
+import { generateOxCalScript } from './models/bayesianLogic';
+import { generateHoardMarkdown, generateHoardJson } from './models/hoardExport';
 import { RelationshipType } from './models/hmdp';
 import type { Context, Observation, Phase } from './models/hmdp';
 import type { LayoutPosition } from './models/matrixState';
@@ -17,7 +19,15 @@ function App() {
   const canvasRef = useRef<MatrixCanvasHandle>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
   const [showSearch, setShowSearch] = useState(false);
-  const [showPhaseGroups, setShowPhaseGroups] = useState(false);
+  const [showPhaseGroups, setShowPhaseGroups] = useState(true);
+  const [theme, setTheme] = useState<'dark'|'light'>('dark');
+  const [publicationMode, setPublicationMode] = useState(false);
+  const [heatmapMode, setHeatmapMode] = useState(false);
+
+  // Sync theme to document body
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // ── Save handler (defined early for keyboard shortcut dependency) ─────
   const handleSave = useCallback(() => {
@@ -63,7 +73,7 @@ function App() {
   }, [undo, redo, dispatch, handleSave, state.selectedContextId]);
 
   // ── Import handler ──────────────────────────────────────────────────────
-  const handleImportData = useCallback((contexts: Context[], observations: Observation[]) => {
+  const handleImportData = useCallback((contexts: Context[], observations: Observation[], events: import('./models/hmdp').Event[] = []) => {
     try {
       // Only validate/reduce directional edges (Above/Below)
       const directionalObs = observations.filter(
@@ -105,7 +115,7 @@ function App() {
       // Combine: reduced directional + all non-directional
       const finalObs = [...reducedDirectional, ...nonDirectionalObs];
 
-      dispatch({ type: 'IMPORT_DATA', contexts, observations: finalObs });
+      dispatch({ type: 'IMPORT_DATA', contexts, observations: finalObs, events });
       dispatch({ type: 'TOGGLE_IMPORT_MODAL', open: false });
     } catch (err: any) {
       alert(`Import error: ${err.message}`);
@@ -122,8 +132,10 @@ function App() {
           meta: loaded.meta,
           contexts: loaded.contexts ?? [],
           observations: loaded.observations ?? [],
+          events: loaded.events ?? [],
           phases: loaded.phases ?? [],
           positions: loaded.positions ?? {},
+          dataVersion: 0,
           selectedContextId: null,
           showImportModal: false,
           sidebarTab: 'units',
@@ -189,6 +201,58 @@ function App() {
     dispatch({ type: 'SET_POSITIONS', positions: {} });
   }, [dispatch, state.observations]);
 
+  // ── Bayesian Export ─────────────────────────────────────────────────────
+  const handleExportOxCal = useCallback(() => {
+    try {
+      const script = generateOxCalScript(state.contexts, state.observations, state.events);
+      const blob = new Blob([script], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.meta.projectName || 'matrix'}.oxcal`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate OxCal script: ${err.message}`);
+    }
+  }, [state.contexts, state.observations, state.events, state.meta.projectName]);
+
+  const handleExportHoardText = useCallback(() => {
+    try {
+      const text = generateHoardMarkdown(state.meta.projectName, state.contexts, state.observations, state.events);
+      const blob = new Blob([text], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.meta.projectName || 'hoard_payload'}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate HOARD Text Payload: ${err.message}`);
+    }
+  }, [state.contexts, state.observations, state.events, state.meta.projectName]);
+
+  const handleExportHoardJson = useCallback(() => {
+    try {
+      const json = generateHoardJson(state.meta.projectName, state.contexts, state.observations, state.events);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.meta.projectName || 'hoard_payload'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate HOARD JSON Payload: ${err.message}`);
+    }
+  }, [state.contexts, state.observations, state.events, state.meta.projectName]);
+
   return (
     <div className="app-shell">
       <Toolbar
@@ -206,9 +270,18 @@ function App() {
         onExportPNG={() => canvasRef.current?.exportPNG()}
         onExportSVG={() => canvasRef.current?.exportSVG()}
         onExportPDF={() => canvasRef.current?.exportPDF()}
+        onExportOxCal={handleExportOxCal}
+        onExportHoardText={handleExportHoardText}
+        onExportHoardJson={handleExportHoardJson}
         contextCount={state.contexts.length}
         showPhaseGroups={showPhaseGroups}
         onTogglePhaseGroups={() => setShowPhaseGroups(prev => !prev)}
+        theme={theme}
+        onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+        publicationMode={publicationMode}
+        onTogglePublicationMode={() => setPublicationMode(prev => !prev)}
+        heatmapMode={heatmapMode}
+        onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
       />
 
       {/* Hidden file input for project load */}
@@ -246,12 +319,16 @@ function App() {
           ref={canvasRef}
           contexts={state.contexts}
           observations={state.observations}
+          events={state.events}
           phases={state.phases}
           positions={state.positions}
           selectedContextId={state.selectedContextId}
           projectName={state.meta.projectName}
           showPhaseGroups={showPhaseGroups}
           dataVersion={state.dataVersion}
+          theme={theme}
+          publicationMode={publicationMode}
+          heatmapMode={heatmapMode}
           onNodeSelect={id => dispatch({ type: 'SELECT_CONTEXT', id })}
           onPositionsChange={handlePositionsChange}
           onLayoutComplete={handleLayoutComplete}

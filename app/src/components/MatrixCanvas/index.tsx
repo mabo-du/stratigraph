@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * MatrixCanvas/index.tsx — Cytoscape.js graph canvas.
  * Renders the Harris Matrix as a directed acyclic graph (DAG).
@@ -14,12 +15,12 @@ import {
 import cytoscape from 'cytoscape';
 // @ts-ignore — no official types for cytoscape-dagre
 import dagre from 'cytoscape-dagre';
-import type { Context, Observation, Phase } from '../../models/hmdp';
+import type { Context, Observation, Phase, Event } from '../../models/hmdp';
 import type { LayoutPosition } from '../../models/matrixState';
 import {
   buildCytoscapeElements,
   collectPositions,
-  CYTOSCAPE_STYLE,
+  generateCytoscapeStyle,
 } from '../../utils/cytoscapeHelpers';
 import { exportPNG, exportSVGFallback, exportPDF } from '../../utils/fileUtils';
 
@@ -46,11 +47,15 @@ export interface MatrixCanvasHandle {
 interface MatrixCanvasProps {
   contexts: Context[];
   observations: Observation[];
+  events?: Event[]; // Make sure Event is available
   phases: Phase[];
   positions: Record<string, LayoutPosition>;
   selectedContextId: string | null;
   projectName: string;
   showPhaseGroups: boolean;
+  theme: 'dark' | 'light';
+  publicationMode: boolean;
+  heatmapMode: boolean;
   dataVersion: number;
   onNodeSelect: (id: string | null) => void;
   onPositionsChange: (positions: Record<string, LayoutPosition>) => void;
@@ -102,7 +107,7 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
       const cy = cytoscape({
         container: containerRef.current,
         elements: [],
-        style: CYTOSCAPE_STYLE,
+        style: generateCytoscapeStyle(props.theme),
         wheelSensitivity: 0.25,
         minZoom: 0.05,
         maxZoom: 5,
@@ -166,7 +171,9 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
             props.observations,
             props.phases,
             props.positions,
-            props.showPhaseGroups
+            props.showPhaseGroups,
+            props.heatmapMode,
+            props.events
           )
         );
         performance.mark('cy-add-end');
@@ -182,23 +189,27 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
           if (pos) n.position({ x: pos.x, y: pos.y });
         });
         cy.fit(undefined, 50);
-      } else {
-        // No positions yet — auto-layout
+      } else if (!props.publicationMode) {
+        // No positions yet — auto-layout (unless we are in publication mode)
         runLayout(cy, pos => onLayoutCompleteRef.current(pos));
       }
     }, [
       props.dataVersion,
       props.showPhaseGroups,
+      props.heatmapMode,
+      props.events,
       // positions deliberately NOT included here: they're applied above only on init
       // and updated separately via dragfree events
     ]);
 
-    // ── Sync node phase colours when phases change ────────────────────────
+    // ── Sync node phase colours when phases or heatmap changes ─────────────
     useEffect(() => {
       const cy = cyRef.current;
       if (!cy) return;
+      cy.style(generateCytoscapeStyle(props.theme));
+      
       const elements = buildCytoscapeElements(
-        props.contexts, props.observations, props.phases, props.positions, props.showPhaseGroups
+        props.contexts, props.observations, props.phases, props.positions, props.showPhaseGroups, props.heatmapMode, props.events
       );
       const nodeElements = elements.filter(el => !el.data?.source);
       nodeElements.forEach(el => {
@@ -207,7 +218,7 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
           node.data('phaseColor', el.data!.phaseColor);
         }
       });
-    }, [props.dataVersion, props.showPhaseGroups]);
+    }, [props.dataVersion, props.showPhaseGroups, props.theme, props.heatmapMode, props.events]);
 
     // ── Sync selection highlight ───────────────────────────────────────────
     useEffect(() => {
@@ -275,18 +286,20 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
     }));
 
     return (
-      <div style={{ position: 'relative', flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
-        {/* Dot grid */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
+      <div className={props.publicationMode ? "canvas-dot-grid" : ""} style={{ position: 'relative', flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
+        {/* Dot grid (now handled by CSS class in pub mode, but leaving this subtle overlay too if desired, actually we will disable this inline one if we use the CSS class) */}
+        {!props.publicationMode && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
+              backgroundSize: '32px 32px',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+        )}
 
         {/* Cytoscape container */}
         <div ref={containerRef} style={{ position: 'absolute', inset: 0, zIndex: 1 }} />

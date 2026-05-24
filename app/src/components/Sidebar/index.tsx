@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Plus, Trash2, ChevronRight, Link, Unlink, Layers } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Link, Unlink, Layers, MapPin } from 'lucide-react';
 import type { Context, Observation, Phase } from '../../models/hmdp';
 import { ContextType, RelationshipType } from '../../models/hmdp';
 import { DEFAULT_PHASE_COLORS } from '../../models/matrixState';
@@ -306,10 +306,15 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
 
   // Reset when context changes
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDesc(context.description ?? '');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setType(context.type);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPhase(context.phase ?? '');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDirty(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context.id]);
 
   const [newRelTarget, setNewRelTarget] = useState('');
@@ -490,6 +495,23 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Spatial Metadata */}
+        {context.spatial?.centroid && (
+          <div className="rel-section">
+            <h4 className="rel-title">
+              <MapPin size={13} style={{ marginRight: 6 }} />
+              Spatial Metadata
+            </h4>
+            <div className="form-row" style={{ fontSize: '0.85rem', color: 'var(--text-2)' }}>
+              <div><strong>X:</strong> {context.spatial.centroid.x}</div>
+              <div><strong>Y:</strong> {context.spatial.centroid.y}</div>
+              {context.spatial.centroid.z !== undefined && (
+                <div><strong>Z:</strong> {context.spatial.centroid.z}</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

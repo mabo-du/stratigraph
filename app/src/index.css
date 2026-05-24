@@ -56,6 +56,30 @@
   --success-color:     var(--success);
 }
 
+[data-theme="light"] {
+  --bg:           #f5f4f1;
+  --surface:      #ffffff;
+  --surface-2:    #f0efe9;
+  --surface-3:    #e8e6df;
+  --surface-hover:#e2dfd5;
+
+  --text:         #2a2724;
+  --text-2:       #5c5650;
+  --text-3:       #8a8278;
+
+  --accent:       #d47c2a;
+  --accent-dim:   rgba(212, 124, 42, 0.15);
+  --accent-hover: #b86920;
+
+  --blue:         #3a6b8f;
+  --blue-dim:     rgba(58, 107, 143, 0.15);
+
+  --border:       rgba(0, 0, 0, 0.1);
+  --border-2:     rgba(0, 0, 0, 0.15);
+
+  --shadow:       0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
 /* ── Reset ───────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -88,6 +112,12 @@ body {
   flex: 1;
   display: flex;
   overflow: hidden;
+}
+
+.canvas-dot-grid {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--border-2) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────────────── */

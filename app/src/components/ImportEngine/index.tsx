@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { Dropzone } from './Dropzone';
 import { ColumnMapper } from './ColumnMapper';
-import { parseCsvFile, applyContextMapping, applyObservationMapping } from '../../utils/csvParser';
-import type { ContextMapping, ObservationMapping } from '../../utils/csvParser';
-import type { Context, Observation } from '../../models/hmdp';
+import { parseCsvFile, applyContextMapping, applyObservationMapping, applyEventMapping } from '../../utils/csvParser';
+import type { ContextMapping, ObservationMapping, EventMapping } from '../../utils/csvParser';
+import type { Context, Observation, Event } from '../../models/hmdp';
 
 interface ImportEngineProps {
-  onDataLoaded: (contexts: Context[], observations: Observation[]) => void;
+  onDataLoaded: (contexts: Context[], observations: Observation[], events: Event[]) => void;
   onClose?: () => void;
 }
 
-type ImportStep = 'upload' | 'map-contexts' | 'map-observations' | 'processing';
+type ImportStep = 'upload' | 'map-contexts' | 'map-observations' | 'map-events' | 'processing';
 
 export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClose }) => {
   const [step, setStep] = useState<ImportStep>('upload');
@@ -22,7 +22,12 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
   const [observationHeaders, setObservationHeaders] = useState<string[]>([]);
   const [observationRows, setObservationRows] = useState<Record<string, any>[]>([]);
 
+  const [eventHeaders, setEventHeaders] = useState<string[]>([]);
+  const [eventRows, setEventRows] = useState<Record<string, any>[]>([]);
+
   const [contexts, setContexts] = useState<Context[]>([]);
+  const [observations, setObservations] = useState<Observation[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const handleContextFileLoaded = async (file: File) => {
@@ -49,6 +54,18 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
     }
   };
 
+  const handleEventFileLoaded = async (file: File) => {
+    try {
+      setError(null);
+      const result = await parseCsvFile(file);
+      setEventHeaders(result.headers);
+      setEventRows(result.rows);
+      setStep('map-events');
+    } catch (err: any) {
+      setError(`Failed to parse Events CSV: ${err.message}`);
+    }
+  };
+
   const handleContextMappingComplete = (mapping: ContextMapping) => {
     const parsedContexts = applyContextMapping(contextRows, mapping);
     setContexts(parsedContexts);
@@ -57,13 +74,25 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
 
   const handleObservationMappingComplete = (mapping: ObservationMapping) => {
     const parsedObservations = applyObservationMapping(observationRows, mapping);
+    setObservations(parsedObservations);
+    setStep('upload');
+  };
+
+  const handleEventMappingComplete = (mapping: EventMapping) => {
+    const parsedEvents = applyEventMapping(eventRows, mapping);
+    setEvents(parsedEvents);
+    setStep('upload');
+  };
+
+  const submitData = () => {
     setStep('processing');
-    onDataLoaded(contexts, parsedObservations);
+    onDataLoaded(contexts, observations, events);
   };
 
   const stepLabel =
     step === 'map-contexts' ? 'Map Context Columns'
     : step === 'map-observations' ? 'Map Relationship Columns'
+    : step === 'map-events' ? 'Map Event Columns'
     : 'Import Stratigraphic Data';
 
   return (
@@ -73,9 +102,10 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
         <div>
           <h1 style={{ fontSize: '1.4rem', marginBottom: '0.25rem' }}>{stepLabel}</h1>
           <p style={{ color: 'var(--text-2)', fontSize: '0.85rem' }}>
-            {step === 'upload' && 'Upload two CSVs: one for Contexts (nodes) and one for Observations (relationships).'}
+            {step === 'upload' && 'Upload your CSV data. Only Contexts and Observations are strictly required.'}
             {step === 'map-contexts' && 'Tell us which columns in your CSV correspond to Context fields.'}
             {step === 'map-observations' && 'Tell us which columns represent the stratigraphic relationship.'}
+            {step === 'map-events' && 'Tell us which columns map to absolute radiocarbon dates/events.'}
             {step === 'processing' && 'Validating your data…'}
           </p>
         </div>
@@ -187,9 +217,46 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
           <div style={{ opacity: contexts.length > 0 ? 1 : 0.4, transition: 'opacity 0.2s', pointerEvents: contexts.length > 0 ? 'auto' : 'none' }}>
             <h3 style={{ marginBottom: '0.5rem', fontSize: '0.85rem' }}>
               Step 2 — Observations CSV
+              {observations.length > 0 && (
+                <span style={{ color: 'var(--success)', fontSize: '0.78rem', marginLeft: 8 }}>{observations.length} loaded ✓</span>
+              )}
             </h3>
-            <Dropzone onFileLoaded={handleObservationFileLoaded} title="Observations CSV (relationships between SUs)" />
+            {observations.length === 0 ? (
+              <Dropzone onFileLoaded={handleObservationFileLoaded} title="Observations CSV (relationships between SUs)" />
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', background: 'var(--surface-2)', border: '1px solid rgba(74, 158, 111, 0.3)', borderRadius: 'var(--radius)' }}>
+                <span style={{ fontSize: '0.85rem' }}>{observations.length} relationships mapped.</span>
+                <button onClick={() => setObservations([])} style={{ background: 'transparent', border: '1px solid var(--border-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>Reset</button>
+              </div>
+            )}
           </div>
+
+          <div style={{ opacity: observations.length > 0 ? 1 : 0.4, transition: 'opacity 0.2s', pointerEvents: observations.length > 0 ? 'auto' : 'none' }}>
+            <h3 style={{ marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+              Step 3 — Events CSV (Optional for Libby/OxCal)
+              {events.length > 0 && (
+                <span style={{ color: 'var(--success)', fontSize: '0.78rem', marginLeft: 8 }}>{events.length} loaded ✓</span>
+              )}
+            </h3>
+            {events.length === 0 ? (
+              <Dropzone onFileLoaded={handleEventFileLoaded} title="Events CSV (C14 Dates)" />
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 1rem', background: 'var(--surface-2)', border: '1px solid rgba(74, 158, 111, 0.3)', borderRadius: 'var(--radius)' }}>
+                <span style={{ fontSize: '0.85rem' }}>{events.length} events mapped.</span>
+                <button onClick={() => setEvents([])} style={{ background: 'transparent', border: '1px solid var(--border-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>Reset</button>
+              </div>
+            )}
+          </div>
+
+          {contexts.length > 0 && observations.length > 0 && (
+            <button
+              onClick={submitData}
+              className="btn btn--primary"
+              style={{ width: '100%', padding: '0.75rem', marginTop: '1rem', justifyContent: 'center' }}
+            >
+              Generate Harris Matrix
+            </button>
+          )}
 
           {/* Quick-import tip */}
           <div style={{ padding: '0.75rem 1rem', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: '0.78rem', color: 'var(--text-2)' }}>
@@ -214,6 +281,16 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
           type="observation"
           headers={observationHeaders}
           onMappingComplete={handleObservationMappingComplete}
+          onCancel={() => setStep('upload')}
+        />
+      )}
+
+      {/* Step: Map events */}
+      {step === 'map-events' && (
+        <ColumnMapper
+          type="event"
+          headers={eventHeaders}
+          onMappingComplete={handleEventMappingComplete}
           onCancel={() => setStep('upload')}
         />
       )}

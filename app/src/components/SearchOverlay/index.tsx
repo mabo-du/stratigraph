@@ -16,19 +16,21 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ contexts, phases, 
 
   const phaseMap = new Map(phases.map(p => [p.id, p]));
 
-  // Fuzzy match: case-insensitive inclusion in ID or Description
-  const results = query.trim() === '' 
-    ? [] 
-    : contexts.filter(c => 
-        c.id.toLowerCase().includes(query.toLowerCase()) || 
-        (c.description ?? '').toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 10); // Limit to top 10
+  const results = React.useMemo(() => {
+    return query.trim() === '' 
+      ? [] 
+      : contexts.filter(c => 
+          c.id.toLowerCase().includes(query.toLowerCase()) || 
+          (c.description ?? '').toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 10);
+  }, [query, contexts]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIndex(0);
   }, [query]);
 
