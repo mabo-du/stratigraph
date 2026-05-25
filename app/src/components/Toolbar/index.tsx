@@ -194,9 +194,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <div className="toolbar-divider" />
 
         {/* Import */}
-        <button className="tb-btn tb-btn--labeled tb-btn--accent" onClick={onImport} title="Import CSV data">
+        <button className="tb-btn tb-btn--labeled tb-btn--accent" onClick={onImport} title="Import data (CSV or HOARD JSON)">
           <Upload size={15} />
-          <span>Import CSV</span>
+          <span>Import</span>
         </button>
 
         <div className="toolbar-divider" />
