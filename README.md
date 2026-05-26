@@ -21,7 +21,7 @@ Construct massive matrices with confidence. The underlying engine utilizes the *
 StratiGraph is designed to be the central hub of a modern digital heritage workflow, cleanly interoperating with powerful external systems:
 
 *   **Libby (Bayesian Geochronology):** Upload your radiocarbon `events.csv`. StratiGraph will transitively reduce your matrix and automatically output a fully structured `OxCal CQL` script, perfectly embedding your prior radiocarbon phases with complex stratigraphic boundaries.
-*   **HOARD (AI Synergy):** The engine flattens complex graph topologies into strict, linear sequential paths (EEDP extraction). This entirely eliminates "topological hallucinations," providing large language models (LLMs) with perfect chronological context for automated archaeological report generation.
+*   **HOARD (AI Synergy):** StratiGraph can directly **import HOARD Phase 1 JSON output** — just select your `ctx_sheet_*.json` files in the **HOARD JSON Import** tab. Relationships are inferred from context fields (`cuts`, `fills`, `same_as`) and validated against the shared schema contract at `schemas/context-sheet-v1.json`. Conversely, StratiGraph's engine flattens complex graph topologies into strict linear sequential paths (EEDP extraction), eliminating "topological hallucinations" for AI report generation.
 *   **QGIS (Spatial Metadata):** The frictionless `.hmatrix.json` schema natively supports `SpatialMetadata` (X, Y, Z centroids and CRS). Import 3D coordinates via CSV, visualize them in the UI sidebar, and export them directly to your favorite GIS platform.
 
 ### 3. Premium UI & Data Visualization
@@ -71,3 +71,11 @@ npm run dev
 ```
 
 Navigate to `http://localhost:5173` to start building your matrix.
+
+### Importing from HOARD
+
+1. **Run HOARD Phase 1** to digitise your context sheets → `ctx_sheet_*.json` files
+2. In StratiGraph, click **Import** → select the **HOARD JSON Import** tab
+3. Multi-select all JSON files (hold Shift or Ctrl)
+4. Review the summary and click **Generate Harris Matrix**
+5. Stratigraphic edges are auto-inferred from relationship fields; stub contexts created for cross-references
