@@ -1,0 +1,19 @@
+{
+  "name": "@stratigraph/sync-react",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@stratigraph/sync": "*",
+    "react": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.7"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
+}
