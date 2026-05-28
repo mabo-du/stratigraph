@@ -6,7 +6,9 @@ import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
+import { OfflineProjects } from './components/OfflineProjects';
 import { saveProject, loadProject, buildGeoJSON, exportGeoJSON } from './utils/fileUtils';
+import { generateTrowelEedp } from './utils/trowelExport';
 import type { PublicationTemplate } from './utils/cytoscapeHelpers';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
 import { generateOxCalScript, generateLibbyPayload } from './models/bayesianLogic';
@@ -21,6 +23,7 @@ function App() {
   const canvasRef = useRef<MatrixCanvasHandle>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showOfflineProjects, setShowOfflineProjects] = useState(false);
   const [showPhaseGroups, setShowPhaseGroups] = useState(true);
   const [theme, setTheme] = useState<'dark'|'light'>('dark');
   const [publicationMode, setPublicationMode] = useState(false);
@@ -33,8 +36,8 @@ function App() {
   }, [theme]);
 
   // ── Save handler (defined early for keyboard shortcut dependency) ─────
-  const handleSave = useCallback(() => {
-    saveProject(state);
+  const handleSave = useCallback(async () => {
+    await saveProject(state);
   }, [state]);
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────
@@ -125,6 +128,31 @@ function App() {
     }
   }, [dispatch]);
 
+
+  const handleLoadOfflineProject = useCallback((data: any) => {
+    dispatch({
+      type: 'LOAD_PROJECT',
+      state: {
+        meta: {
+          projectName: data.projectName ?? 'Untitled Matrix',
+          siteName: data.siteName ?? '',
+          excavationYear: data.excavationYear ?? '',
+          notes: data.notes ?? '',
+        },
+        contexts: data.contexts ?? [],
+        observations: data.observations ?? [],
+        events: data.events ?? [],
+        phases: data.phases ?? [],
+        positions: data.positions ?? {},
+        dataVersion: 0,
+        selectedContextId: null,
+        showImportModal: false,
+        sidebarTab: 'units',
+        past: [],
+        future: [],
+      },
+    });
+  }, [dispatch]);
 
   const handleLoadFile = useCallback(async (file: File) => {
     try {
@@ -275,6 +303,25 @@ function App() {
     }
   }, [state.contexts, state.observations, state.events, state.meta.projectName]);
 
+  const handleExportTrowel = useCallback(() => {
+    try {
+      const json = generateTrowelEedp(
+        state.meta.projectName, state.contexts, state.observations, state.events,
+      );
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_trowel_eedp.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate Trowel payload: ${err.message}`);
+    }
+  }, [state]);
+
   const handleExportReport = useCallback(() => {
     try {
       const report = generateMatrixReport(
@@ -348,11 +395,13 @@ function App() {
         onImport={() => dispatch({ type: 'TOGGLE_IMPORT_MODAL', open: true })}
         onSave={handleSave}
         onLoad={() => loadInputRef.current?.click()}
+        onShowOfflineProjects={() => setShowOfflineProjects(true)}
         onExportPNG={() => canvasRef.current?.exportPNG()}
         onExportSVG={() => canvasRef.current?.exportSVG()}
         onExportPDF={() => canvasRef.current?.exportPDF()}
         onExportOxCal={handleExportOxCal}
         onExportLibbyJson={handleExportLibbyJson}
+        onExportTrowel={handleExportTrowel}
         onExportHoardText={handleExportHoardText}
         onExportHoardJson={handleExportHoardJson}
         onExportReport={handleExportReport}
@@ -437,6 +486,21 @@ function App() {
             <ImportEngine
               onDataLoaded={handleImportData}
               onClose={() => dispatch({ type: 'TOGGLE_IMPORT_MODAL', open: false })}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Offline Projects Modal */}
+      {showOfflineProjects && (
+        <div
+          className="modal-overlay"
+          onClick={e => { if (e.target === e.currentTarget) setShowOfflineProjects(false); }}
+        >
+          <div className="modal-panel" style={{ maxWidth: 520 }}>
+            <OfflineProjects
+              onLoadProject={handleLoadOfflineProject}
+              onClose={() => setShowOfflineProjects(false)}
             />
           </div>
         </div>

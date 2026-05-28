@@ -6,7 +6,7 @@ import React, { useRef, useState } from 'react';
 import {
   Undo2, Redo2, LayoutDashboard, Upload, Save, FolderOpen,
   Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun, 
-  Grid3X3, Flame, FileText
+  Grid3X3, Flame, FileText, HardDrive
 } from 'lucide-react';
 import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
 
@@ -22,11 +22,13 @@ interface ToolbarProps {
   onImport: () => void;
   onSave: () => void;
   onLoad: () => void;
+  onShowOfflineProjects: () => void;
   onExportPNG: () => void;
   onExportSVG: () => void;
   onExportPDF: () => void;
   onExportOxCal: () => void;
   onExportLibbyJson: () => void;
+  onExportTrowel: () => void;
   onExportHoardText: () => void;
   onExportHoardJson: () => void;
   onExportReport: () => void;
@@ -57,11 +59,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onImport,
   onSave,
   onLoad,
+  onShowOfflineProjects,
   onExportPNG,
   onExportSVG,
   onExportPDF,
   onExportOxCal,
   onExportLibbyJson,
+  onExportTrowel,
   onExportHoardText,
   onExportHoardJson,
   onExportReport,
@@ -283,6 +287,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               e.target.value = '';
             }}
           />
+          <button
+            className="tb-btn"
+            onClick={onShowOfflineProjects}
+            title="Offline saved projects"
+            aria-label="Offline projects"
+          >
+            <HardDrive size={15} />
+          </button>
         </div>
 
         <div className="toolbar-divider" />
@@ -355,6 +367,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   onClick={() => { onExportGeoJSON(); setShowExportMenu(false); }}
                 >
                   Export GeoJSON (for QGIS)
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportTrowel(); setShowExportMenu(false); }}
+                >
+                  Export for Trowel (EEDP .json)
                 </button>
                 <button
                   className="dropdown-item"

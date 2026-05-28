@@ -7,6 +7,7 @@
 import type { Core } from 'cytoscape';
 import type { MatrixState } from '../models/matrixState';
 import { jsPDF } from 'jspdf';
+import { saveProjectOffline, updateProjectOffline } from './offlineStorage';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -19,7 +20,10 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function saveProject(state: MatrixState) {
+/** Track the last offline project ID for overwrite-save. */
+let lastOfflineId: string | null = null;
+
+export async function saveProject(state: MatrixState) {
   const exportData = {
     projectName: state.meta.projectName,
     siteName: state.meta.siteName,
@@ -33,10 +37,22 @@ export function saveProject(state: MatrixState) {
     version: '1.0',
   };
 
+  // Browser download
   const json = JSON.stringify(exportData, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const safeName = state.meta.projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
   downloadBlob(blob, `${safeName}.hmatrix.json`);
+
+  // Offline IndexedDB persistence (silent — best effort)
+  try {
+    if (lastOfflineId) {
+      await updateProjectOffline(lastOfflineId, state.meta.projectName, state.meta.siteName, exportData);
+    } else {
+      lastOfflineId = await saveProjectOffline(state.meta.projectName, state.meta.siteName, exportData);
+    }
+  } catch {
+    // IndexedDB may be unavailable — that's fine, file download succeeded
+  }
 }
 
 export async function loadProject(
