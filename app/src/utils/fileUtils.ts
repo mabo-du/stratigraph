@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * fileUtils.ts — Save/load project JSON, export PNG/SVG, export GeoJSON.
- * exports: saveProject, loadProject, exportPNG, exportSVGFallback, exportPDF, exportGeoJSON
+ * exports: saveProject, loadProject, loadDemoProject, exportPNG, exportSVGFallback, exportPDF, exportGeoJSON
  */
 
 import type { Core } from 'cytoscape';
@@ -52,6 +52,34 @@ export async function saveProject(state: MatrixState) {
     }
   } catch {
     // IndexedDB may be unavailable — that's fine, file download succeeded
+  }
+}
+
+/**
+ * Load the built-in Roman Villa demo project.
+ * Returns null if the demo file cannot be fetched.
+ */
+export async function loadDemoProject(): Promise<{ meta: MatrixState['meta']; contexts: any[]; observations: any[]; events: any[]; phases: any[]; positions: any } | null> {
+  try {
+    const resp = await fetch('/demo_roman_villa.hmatrix.json');
+    if (!resp.ok) return null;
+    const data = await resp.json();
+
+    return {
+      meta: {
+        projectName: data.projectName ?? 'Roman Villa Excavation',
+        siteName: data.siteName ?? '',
+        excavationYear: data.excavationYear ?? '',
+        notes: data.notes ?? '',
+      },
+      contexts: data.contexts ?? [],
+      observations: data.observations ?? [],
+      events: data.events ?? [],
+      phases: data.phases ?? [],
+      positions: data.positions ?? {},
+    };
+  } catch {
+    return null;
   }
 }
 

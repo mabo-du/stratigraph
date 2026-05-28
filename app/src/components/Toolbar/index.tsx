@@ -22,6 +22,7 @@ interface ToolbarProps {
   onImport: () => void;
   onSave: () => void;
   onLoad: () => void;
+  onLoadDemo: () => void;
   onShowOfflineProjects: () => void;
   onExportPNG: () => void;
   onExportSVG: () => void;
@@ -59,6 +60,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onImport,
   onSave,
   onLoad,
+  onLoadDemo,
   onShowOfflineProjects,
   onExportPNG,
   onExportSVG,
@@ -287,6 +289,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               e.target.value = '';
             }}
           />
+          <div className="toolbar-divider" />
+          <button
+            className="tb-btn tb-btn--labeled tb-btn--accent"
+            onClick={onLoadDemo}
+            title="Load the Roman Villa demo project"
+            style={{ fontSize: '0.78rem' }}
+          >
+            ⛏ Demo
+          </button>
           <button
             className="tb-btn"
             onClick={onShowOfflineProjects}

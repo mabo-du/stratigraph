@@ -1,9 +1,19 @@
-Context ID,Context Type,Description,Phase
-101,Positive,Topsoil,Modern
-102,Positive,Rubble layer,Post-Medieval
-103,Negative,Robber trench cut,Post-Medieval
-104,Positive,Wall foundation,Medieval
-105,Positive,Floor surface,Medieval
-106,Negative,Pit cut,Roman
-107,Positive,Pit fill,Roman
-108,Positive,Natural subsoil,Geological
+Context ID,Context Type,Description,Period,Phase,Centroid X,Centroid Y,Centroid Z
+100,Positive,Topsoil — dark brown silty loam with frequent root bioturbation,Modern,Modern,500.0,1000.0,100.5
+101,Positive,Ploughsoil — mid brown silty clay with occasional CBM fragments,Post-Medieval,Post-Medieval,500.5,1000.2,99.8
+102,Positive,Demolition layer — mortar-rich rubble with tegula and imbrex fragments,Post-Medieval,Post-Medieval,501.0,1000.5,99.0
+103,Negative,Robber trench cut — linear cut truncating villa walls,Post-Medieval,Post-Medieval,502.0,1001.0,98.5
+104,Positive,Robber trench fill — mixed dark silty clay with mortar and tile,Post-Medieval,Post-Medieval,,
+105,Positive,Collapse deposit — tipped wall plaster and painted ceiling fragments,Roman,Roman Late,501.5,1000.8,98.0
+106,Positive,Occupation layer — dark grey-brown silty loam with charcoal and Samian pottery,Roman,Roman Late,500.8,1000.3,97.5
+107,Positive,Hearth rake-out — burnt clay with abundant charcoal,Roman,Roman Late,501.2,999.8,97.3
+108,Positive,Floor make-up — compacted yellow clay bedding for opus signinum floor,Roman,Roman Early,500.5,1000.5,97.0
+109,Positive,Opus signinum floor surface — pinkish-red waterproof mortar floor,Roman,Roman Early,501.0,1000.0,96.8
+110,Positive,Wall foundation — mortared limestone rubble E-W alignment,Roman,Roman Early,502.5,1000.0,96.5
+111,Positive,Wall foundation — mortared limestone rubble N-S alignment,Roman,Roman Early,501.0,1001.5,96.5
+112,Negative,Construction cut for wall 110 — into natural gravels,Roman,Roman Early,,
+113,Negative,Construction cut for wall 111 — into natural gravels,Roman,Roman Early,,
+114,Positive,Make-up layer — compacted gravel and crushed chalk,Roman,Roman Early,500.5,1000.5,96.2
+115,Negative,Pit cut — sub-circular 1.2m diameter 0.8m deep,Roman,Roman Early,503.0,999.0,96.0
+116,Positive,Pit fill — dark grey organic silty clay with charcoal and oyster shell,Roman,Roman Early,503.0,999.0,95.5
+117,Positive,Natural substrate — yellow-brown sandy gravel with clay lenses,Geological,Natural,501.0,1000.0,95.0
