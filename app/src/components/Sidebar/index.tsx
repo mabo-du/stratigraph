@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import { Plus, Trash2, ChevronRight, Link, Unlink, Layers, MapPin } from 'lucide-react';
+import { RelationshipSuggestions } from '../RelationshipSuggestions';
 import type { Context, Observation, Phase } from '../../models/hmdp';
 import { ContextType, RelationshipType } from '../../models/hmdp';
 import { DEFAULT_PHASE_COLORS } from '../../models/matrixState';
@@ -81,13 +82,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onDeleteObservation={onDeleteObservation}
               onBack={() => onSelectContext(null)}
             />
-          : <UnitList
-              contexts={contexts}
-              phases={phases}
-              selectedId={selectedId}
-              onSelect={onSelectContext}
-              onAdd={onAddContext}
-            />
+          : <>
+              <UnitList
+                contexts={contexts}
+                phases={phases}
+                selectedId={selectedId}
+                onSelect={onSelectContext}
+                onAdd={onAddContext}
+              />
+              {contexts.length > 0 && (
+                <RelationshipSuggestions
+                  contexts={contexts}
+                  observations={observations}
+                  phases={phases}
+                  onAddObservation={onAddObservation}
+                />
+              )}
+            </>
       )}
 
       {sidebarTab === 'phases' && (
