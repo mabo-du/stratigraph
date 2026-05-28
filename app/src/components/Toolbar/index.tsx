@@ -6,7 +6,7 @@ import React, { useRef, useState } from 'react';
 import {
   Undo2, Redo2, LayoutDashboard, Upload, Save, FolderOpen,
   Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun, 
-  Grid3X3, Flame, FileText
+  Grid3X3, Flame, FileText, HardDrive
 } from 'lucide-react';
 import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
 
@@ -22,6 +22,7 @@ interface ToolbarProps {
   onImport: () => void;
   onSave: () => void;
   onLoad: () => void;
+  onShowOfflineProjects: () => void;
   onExportPNG: () => void;
   onExportSVG: () => void;
   onExportPDF: () => void;
@@ -57,6 +58,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onImport,
   onSave,
   onLoad,
+  onShowOfflineProjects,
   onExportPNG,
   onExportSVG,
   onExportPDF,
@@ -283,6 +285,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               e.target.value = '';
             }}
           />
+          <button
+            className="tb-btn"
+            onClick={onShowOfflineProjects}
+            title="Offline saved projects"
+            aria-label="Offline projects"
+          >
+            <HardDrive size={15} />
+          </button>
         </div>
 
         <div className="toolbar-divider" />

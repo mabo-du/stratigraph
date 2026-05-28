@@ -11,6 +11,7 @@
 - **Preview**: `cd app && npm run preview`
 - **Desktop dev**: `cd app && npm run tauri:dev` (Tauri + Vite hot-reload)
 - **Desktop build**: `cd app && npm run tauri:build` (produces .deb, .rpm, .AppImage)
+- **PWA**: App auto-registers service worker in production builds; installable via browser prompt
 - **Deploy**: `git push` triggers `.github/workflows/deploy.yml`
 
 ## Project Overview
@@ -76,6 +77,7 @@ app/
 - EEDP extraction prevents topological hallucinations in AI pipelines
 - Undo/redo via command pattern (50-deep stack)
 - Zero backend — runs entirely in the browser
+- PWA: auto-registered service worker with Workbox precaching; offline-capable via IndexedDB project persistence
 - Tauri v2 desktop wrapper (Rust + OS-native WebView) enables offline fieldwork with native file dialogs
 - Tauri bundle sizes: ~3.7 MB .deb, ~11 MB binary, ~80 MB AppImage (bundles system deps)
 
@@ -93,6 +95,7 @@ app/
 | `CHANGELOG.md` | Version history |
 | `app/src-tauri/` | Tauri v2 desktop build (Rust backend, native dialogs) |
 | `app/src/utils/tauriBridge.ts` | Tauri<->browser bridge with native file dialog fallback |
+| `app/src/utils/offlineStorage.ts` | IndexedDB-backed offline project persistence |
 
 <!-- AI-CONTEXT-END -->
 
