@@ -114,11 +114,10 @@ export class Room {
           this.doc,
           { connect: true },
         );
-        wsProvider.on('status', (event: { status: string }) => {
-          this._setStatus(
-            event.status as SyncStatus,
-            this._status.pending,
-          );
+        wsProvider.on('status', (event: any) => {
+          if (typeof event.status === 'string') {
+            this._setStatus(event.status as SyncStatus, this._status.pending);
+          }
         });
         this._providers.push(wsProvider);
       });
@@ -130,11 +129,10 @@ export class Room {
           this.doc,
           { signaling: config.signaling, password: config.password },
         );
-        rtcProvider.on('status', (event: { status: string }) => {
-          this._setStatus(
-            event.status as SyncStatus,
-            this._status.pending,
-          );
+        rtcProvider.on('status', (event: any) => {
+          if (typeof event.status === 'string') {
+            this._setStatus(event.status as SyncStatus, this._status.pending);
+          }
         });
         this._providers.push(rtcProvider);
       });

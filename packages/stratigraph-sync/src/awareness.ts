@@ -10,7 +10,7 @@ const COLORS = [
  * Wraps Yjs awareness for managing connected user state.
  */
 export function createAwareness(
-  doc: Doc,
+  _doc: Doc,
   userId: string,
   displayName: string,
   color?: string,

@@ -1,6 +1,4 @@
-import type { Doc } from 'yjs';
-import type { WebsocketProvider } from 'y-websocket';
-import type { WebrtcProvider } from 'y-webrtc';
+
 
 /** Configuration for creating or joining a collaboration room */
 export interface RoomConfig {

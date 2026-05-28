@@ -9,6 +9,17 @@ import {
   Grid3X3, Flame, FileText, HardDrive
 } from 'lucide-react';
 import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
+import type { SyncStatus } from '@stratigraph/sync';
+import { CollaborationBar } from '../../collaboration/CollaborationBar';
+import { ShareDialog } from '../../collaboration/ShareDialog';
+import { AwarenessPanel } from '../../collaboration/AwarenessPanel';
+
+interface Collaborator {
+  userId: string;
+  displayName: string;
+  color: string;
+  activity?: string;
+}
 
 interface ToolbarProps {
   projectName: string;
@@ -49,6 +60,14 @@ interface ToolbarProps {
   onPublicationTemplateChange: (t: PublicationTemplate) => void;
   heatmapMode: boolean;
   onToggleHeatmapMode: () => void;
+  // Collaboration props
+  collabConnected: boolean;
+  collabStatus: SyncStatus;
+  collabUsers: Collaborator[];
+  collabPending: number;
+  collabShareableLink: string;
+  onStartSession: () => void;
+  onLeaveSession: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -90,11 +109,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleHeatmapMode,
   theme,
   onToggleTheme,
+  collabConnected,
+  collabStatus,
+  collabUsers,
+  collabPending,
+  collabShareableLink,
+  onStartSession,
+  onLeaveSession,
 }) => {
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(projectName);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showAwareness, setShowAwareness] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -429,7 +457,33 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             </>
           )}
         </div>
+
+        <div className="toolbar-divider" />
+
+        {/* Collaboration */}
+        <div className="toolbar-group" style={{ position: 'relative' }}>
+          <CollaborationBar
+            isConnected={collabConnected}
+            status={collabStatus}
+            collaborators={collabUsers}
+            pendingChanges={collabPending}
+            onCopyLink={() => setShowShareDialog(true)}
+            onStartSession={onStartSession}
+            onLeaveSession={onLeaveSession}
+            onShowUsers={() => setShowAwareness(v => !v)}
+          />
+          <AwarenessPanel
+            open={showAwareness}
+            collaborators={collabUsers}
+            onClose={() => setShowAwareness(false)}
+          />
+        </div>
       </div>
+      <ShareDialog
+        open={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        shareableLink={collabShareableLink}
+      />
     </header>
   );
 };
