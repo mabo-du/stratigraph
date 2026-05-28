@@ -2,9 +2,11 @@
  * calibration.ts — In-browser radiocarbon calibration engine.
  *
  * Pure TypeScript implementation of calibration curve interpolation,
- * probability density computation, and HPD interval extraction.
+ * probability density computation, HPD interval extraction,
+ * and stratigraphic sequence calibration (Dye & Buck algorithm).
  *
- * exports: loadCurve, calibrateDate, CalibratedResult, CalibratedRange
+ * exports: loadCurve, calibrateDate, calibrateSequence,
+ *          CalibratedResult, CalibratedRange, ConstrainedResult
  */
 
 // ── Data types ──────────────────────────────────────────────────────────────
@@ -226,4 +228,163 @@ function extractHpdRanges(
   }
 
   return ranges;
+}
+
+// ── Sequence calibration (Dye & Buck stratigraphic constraints) ────────────
+
+/**
+ * A calibrated result with optional stratigraphic constraint info.
+ */
+export interface ConstrainedResult extends CalibratedResult {
+  /** Unconstrained result for comparison */
+  unconstrained: CalibratedResult;
+  /** Whether stratigraphic constraints were applied */
+  constrained: boolean;
+  /** IDs of younger contexts that constrain this one */
+  constrainedByYounger: string[];
+  /** IDs of older contexts that constrain this one */
+  constrainedByOlder: string[];
+}
+
+/**
+ * Calibrate multiple C14 events with stratigraphic constraints.
+ *
+ * Implements the Dye & Buck algorithm: stratigraphic relationships
+ * (younger context above older context) act as Bayesian priors,
+ * truncating probability densities where they violate superposition.
+ *
+ * @param curve - Calibration curve
+ * @param events - Map of eventId → { c14BP, sigma, contextId }
+ * @param constraints - Array of { older: contextId, younger: contextId }
+ * @param contextEvents - Map of contextId → eventId[]
+ * @returns Map of eventId → ConstrainedResult
+ */
+export function calibrateSequence(
+  curve: CurvePoint[],
+  events: Map<string, { c14BP: number; sigma: number; contextId: string }>,
+  constraints: { older: string; younger: string }[],
+  contextEvents: Map<string, string[]>,
+): Map<string, ConstrainedResult> {
+  const results = new Map<string, ConstrainedResult>();
+
+  // Phase 1: Calculate unconstrained PDFs for all events
+  const unconstrained = new Map<string, CalibratedResult>();
+  for (const [eventId, ev] of events) {
+    unconstrained.set(eventId, calibrateDate(curve, ev.c14BP, ev.sigma));
+  }
+
+  // Phase 2: Apply constraints iteratively until convergence
+  // Build a graph of context constraints: contextId → { older: contextId[], younger: contextId[] }
+  const constraintGraph = new Map<string, { older: Set<string>; younger: Set<string> }>();
+  for (const { older, younger } of constraints) {
+    if (!constraintGraph.has(older)) constraintGraph.set(older, { older: new Set(), younger: new Set() });
+    if (!constraintGraph.has(younger)) constraintGraph.set(younger, { older: new Set(), younger: new Set() });
+    constraintGraph.get(younger)!.older.add(older);
+    constraintGraph.get(older)!.younger.add(younger);
+  }
+
+  // Phase 3: For each event, apply constraints from older/younger neighbors
+  for (const [eventId, ev] of events) {
+    const ucResult = unconstrained.get(eventId)!;
+    const ctxId = ev.contextId;
+    const ctxConstraints = constraintGraph.get(ctxId);
+
+    const constrainedByYounger: string[] = [];
+    const constrainedByOlder: string[] = [];
+
+    if (!ctxConstraints || (!ctxConstraints.older.size && !ctxConstraints.younger.size)) {
+      // No constraints — return unconstrained
+      results.set(eventId, {
+        ...ucResult,
+        unconstrained: ucResult,
+        constrained: false,
+        constrainedByYounger: [],
+        constrainedByOlder: [],
+      });
+      continue;
+    }
+
+    // Find the most constraining older and younger boundaries
+    let oldestBoundary = 0;       // cal BP — younger must be BELOW this (lower cal BP = older)
+    let youngestBoundary = 50000; // cal BP — older must be ABOVE this
+
+    for (const olderCtxId of ctxConstraints.older) {
+      const olderEvents = contextEvents.get(olderCtxId) || [];
+      for (const oeId of olderEvents) {
+        const oeResult = unconstrained.get(oeId);
+        if (!oeResult) continue;
+        // Older context's 2σ earliest is the boundary: younger must be <= this
+        for (const r of oeResult.range2σ) {
+          if (r.from > oldestBoundary) oldestBoundary = r.from;
+        }
+        constrainedByOlder.push(oeId);
+      }
+    }
+
+    for (const youngerCtxId of ctxConstraints.younger) {
+      const youngerEvents = contextEvents.get(youngerCtxId) || [];
+      for (const yeId of youngerEvents) {
+        const yeResult = unconstrained.get(yeId);
+        if (!yeResult) continue;
+        // Younger context's 2σ latest is the boundary: older must be >= this
+        for (const r of yeResult.range2σ) {
+          if (r.to < youngestBoundary) youngestBoundary = r.to;
+        }
+        constrainedByYounger.push(yeId);
+      }
+    }
+
+    // Apply truncation to the PDF
+    const constrainedDensity = ucResult.density.filter(p =>
+      p.calBP <= oldestBoundary && p.calBP >= youngestBoundary
+    );
+
+    if (constrainedDensity.length === 0) {
+      // Constraint too tight — return unconstrained as fallback
+      results.set(eventId, {
+        ...ucResult,
+        unconstrained: ucResult,
+        constrained: false,
+        constrainedByYounger,
+        constrainedByOlder,
+      });
+      continue;
+    }
+
+    // Renormalize
+    const totalProb = constrainedDensity.reduce((s, p) => s + p.prob, 0);
+    for (const p of constrainedDensity) p.prob /= totalProb;
+
+    // Recompute statistics on constrained density
+    const byProb = [...constrainedDensity].sort((a, b) => b.prob - a.prob);
+    const byCal = [...constrainedDensity].sort((a, b) => a.calBP - b.calBP);
+
+    const cRange1σ = extractHpdRanges(byCal, byProb, 0.682);
+    const cRange2σ = extractHpdRanges(byCal, byProb, 0.954);
+
+    let cMean = 0;
+    for (const p of constrainedDensity) cMean += p.calBP * p.prob;
+
+    let cCumsum = 0;
+    let cMedian = constrainedDensity[0]?.calBP ?? 0;
+    for (const p of constrainedDensity) {
+      cCumsum += p.prob;
+      if (cCumsum >= 0.5) { cMedian = p.calBP; break; }
+    }
+
+    results.set(eventId, {
+      calBP: cMedian,
+      median: cMedian,
+      mean: cMean,
+      range1σ: cRange1σ,
+      range2σ: cRange2σ,
+      density: constrainedDensity,
+      unconstrained: ucResult,
+      constrained: true,
+      constrainedByYounger,
+      constrainedByOlder,
+    });
+  }
+
+  return results;
 }
