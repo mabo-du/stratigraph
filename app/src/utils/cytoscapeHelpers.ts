@@ -169,28 +169,28 @@ export function generateCytoscapeStyle(
     ? '"Noto Serif Display", "DM Serif Display", Georgia, serif'
     : '"JetBrains Mono", "Fira Code", monospace';
   const nodeFontSize = isTraditional ? 11 : 13;
-  const edgeCurveStyle = isTraditional ? 'haystack' as any : 'bezier' as any;
-  // Haystack edges are straight lines — cleaner for publication
+  const edgeCurveStyle = isTraditional ? 'straight' as any : 'bezier' as any;
+  // Straight edges for publication; bezier for standard interactive use
 
   return [
     // ── Compound Nodes (Phases) ─────────────────────────────────────────────
     {
       selector: ':parent',
       style: {
-        'background-color': 'data(phaseColor)' as any,
-        'background-opacity': 0.08,
-        'border-width': 2,
+        'background-color': isMinimal ? '#f5f5f5' as any : 'data(phaseColor)' as any,
+        'background-opacity': isMinimal ? 0.5 : (isTraditional ? 0.04 : 0.08),
+        'border-width': isTraditional ? 1 : 2,
         'border-color': 'data(phaseColor)' as any,
-        'border-style': 'dashed',
-        'border-opacity': 0.8,
+        'border-style': isTraditional ? 'solid' : 'dashed',
+        'border-opacity': isTraditional ? 0.5 : 0.8,
         'label': 'data(label)',
-        'font-family': '"DM Sans", system-ui, sans-serif',
-        'font-size': 16,
+        'font-family': isTraditional ? '"Noto Serif Display", Georgia, serif' : '"DM Sans", system-ui, sans-serif',
+        'font-size': isTraditional ? 14 : 16,
         'font-weight': 600 as any,
         'text-valign': 'top',
         'text-halign': 'center',
         'color': 'data(phaseColor)' as any,
-        'padding': '15px' as any,
+        'padding': '12px' as any,
         'text-margin-y': -8 as any,
         'shape': 'roundrectangle' as any,
       }
@@ -263,6 +263,8 @@ export function generateCytoscapeStyle(
         'arrow-scale': isTraditional ? 0.8 : 1.2,
         'curve-style': edgeCurveStyle,
         'opacity': isMinimal ? 0.7 : 0.85,
+        // For traditional: add a small gap at the target for cleaner appearance
+        'target-distance-from-node': isTraditional ? 2 : 0,
       },
     },
     // Equals edges — dashed, no arrow
