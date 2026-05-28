@@ -1,0 +1,20 @@
+{
+  "name": "sync-sidecar",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "sync-sidecar": "./bin/sync-sidecar"
+  },
+  "dependencies": {
+    "@stratigraph/sync": "*",
+    "yjs": "^13.6.0"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.7"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
+}
