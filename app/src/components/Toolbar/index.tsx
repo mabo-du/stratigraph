@@ -60,6 +60,8 @@ interface ToolbarProps {
   onPublicationTemplateChange: (t: PublicationTemplate) => void;
   heatmapMode: boolean;
   onToggleHeatmapMode: () => void;
+  show3D: boolean;
+  onToggle3D: () => void;
   // Collaboration props
   collabConnected: boolean;
   collabStatus: SyncStatus;
@@ -107,6 +109,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onPublicationTemplateChange,
   heatmapMode,
   onToggleHeatmapMode,
+  show3D,
+  onToggle3D,
   theme,
   onToggleTheme,
   collabConnected,
@@ -299,6 +303,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         
         {/* Visuals */}
         <div className="toolbar-group">
+          <button
+            className={`tb-btn ${show3D ? 'tb-btn--accent' : ''}`}
+            onClick={onToggle3D}
+            disabled={contextCount === 0}
+            title="Toggle 3D Scene View"
+          >
+            <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>3D</span>
+          </button>
           <button
             className={`tb-btn ${heatmapMode ? 'tb-btn--accent' : ''}`}
             onClick={onToggleHeatmapMode}

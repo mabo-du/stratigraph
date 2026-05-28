@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 import { useMatrixStore } from './hooks/useMatrixStore';
 import { MatrixCanvas } from './components/MatrixCanvas';
 import type { MatrixCanvasHandle } from './components/MatrixCanvas';
+import { Scene3D } from './components/Scene3D';
 import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { ImportEngine } from './components/ImportEngine';
@@ -40,6 +41,7 @@ function App() {
   const [publicationMode, setPublicationMode] = useState(false);
   const [publicationTemplate, setPublicationTemplate] = useState<PublicationTemplate>('standard');
   const [heatmapMode, setHeatmapMode] = useState(false);
+  const [show3D, setShow3D] = useState(false);
 
   // Sync theme to document body
   useEffect(() => {
@@ -468,6 +470,8 @@ function App() {
         onPublicationTemplateChange={setPublicationTemplate}
         heatmapMode={heatmapMode}
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
+        show3D={show3D}
+        onToggle3D={() => setShow3D(prev => !prev)}
         collabConnected={collab.isConnected}
         collabStatus={collab.status}
         collabUsers={collab.users.map(u => ({
@@ -514,26 +518,35 @@ function App() {
           onSetTab={tab => dispatch({ type: 'SET_SIDEBAR_TAB', tab })}
         />
 
-        <MatrixCanvas
-          ref={canvasRef}
-          contexts={state.contexts}
-          observations={state.observations}
-          events={state.events}
-          phases={state.phases}
-          positions={state.positions}
-          selectedContextId={state.selectedContextId}
-          projectName={state.meta.projectName}
-          showPhaseGroups={showPhaseGroups}
-          collapsedPhases={collapsedPhases}
-          dataVersion={state.dataVersion}
-          theme={theme}
-          publicationMode={publicationMode}
-          publicationTemplate={publicationTemplate}
-          heatmapMode={heatmapMode}
-          onNodeSelect={id => dispatch({ type: 'SELECT_CONTEXT', id })}
-          onPositionsChange={handlePositionsChange}
-          onLayoutComplete={handleLayoutComplete}
-        />
+        {show3D ? (
+          <Scene3D
+            contexts={state.contexts}
+            phases={state.phases}
+            selectedId={state.selectedContextId}
+            onSelectContext={id => dispatch({ type: 'SELECT_CONTEXT', id })}
+          />
+        ) : (
+          <MatrixCanvas
+            ref={canvasRef}
+            contexts={state.contexts}
+            observations={state.observations}
+            events={state.events}
+            phases={state.phases}
+            positions={state.positions}
+            selectedContextId={state.selectedContextId}
+            projectName={state.meta.projectName}
+            showPhaseGroups={showPhaseGroups}
+            collapsedPhases={collapsedPhases}
+            dataVersion={state.dataVersion}
+            theme={theme}
+            publicationMode={publicationMode}
+            publicationTemplate={publicationTemplate}
+            heatmapMode={heatmapMode}
+            onNodeSelect={id => dispatch({ type: 'SELECT_CONTEXT', id })}
+            onPositionsChange={handlePositionsChange}
+            onLayoutComplete={handleLayoutComplete}
+          />
+        )}
       </div>
 
       {/* Import Modal */}
