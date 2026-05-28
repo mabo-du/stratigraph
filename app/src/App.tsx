@@ -7,6 +7,7 @@ import { Sidebar } from './components/Sidebar';
 import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
 import { saveProject, loadProject, buildGeoJSON, exportGeoJSON } from './utils/fileUtils';
+import type { PublicationTemplate } from './utils/cytoscapeHelpers';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
 import { generateOxCalScript } from './models/bayesianLogic';
 import { generateHoardMarkdown, generateHoardJson } from './models/hoardExport';
@@ -22,6 +23,7 @@ function App() {
   const [showPhaseGroups, setShowPhaseGroups] = useState(true);
   const [theme, setTheme] = useState<'dark'|'light'>('dark');
   const [publicationMode, setPublicationMode] = useState(false);
+  const [publicationTemplate, setPublicationTemplate] = useState<PublicationTemplate>('standard');
   const [heatmapMode, setHeatmapMode] = useState(false);
 
   // Sync theme to document body
@@ -302,6 +304,8 @@ function App() {
         onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
         publicationMode={publicationMode}
         onTogglePublicationMode={() => setPublicationMode(prev => !prev)}
+        publicationTemplate={publicationTemplate}
+        onPublicationTemplateChange={setPublicationTemplate}
         heatmapMode={heatmapMode}
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
       />
@@ -350,6 +354,7 @@ function App() {
           dataVersion={state.dataVersion}
           theme={theme}
           publicationMode={publicationMode}
+          publicationTemplate={publicationTemplate}
           heatmapMode={heatmapMode}
           onNodeSelect={id => dispatch({ type: 'SELECT_CONTEXT', id })}
           onPositionsChange={handlePositionsChange}

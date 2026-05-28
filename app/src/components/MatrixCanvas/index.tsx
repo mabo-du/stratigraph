@@ -17,6 +17,7 @@ import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import type { Context, Observation, Phase, Event } from '../../models/hmdp';
 import type { LayoutPosition } from '../../models/matrixState';
+import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
 import {
   buildCytoscapeElements,
   collectPositions,
@@ -55,6 +56,7 @@ interface MatrixCanvasProps {
   showPhaseGroups: boolean;
   theme: 'dark' | 'light';
   publicationMode: boolean;
+  publicationTemplate: PublicationTemplate;
   heatmapMode: boolean;
   dataVersion: number;
   onNodeSelect: (id: string | null) => void;
@@ -107,7 +109,7 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
       const cy = cytoscape({
         container: containerRef.current,
         elements: [],
-        style: generateCytoscapeStyle(props.theme),
+        style: generateCytoscapeStyle(props.theme, props.publicationTemplate),
         wheelSensitivity: 0.25,
         minZoom: 0.05,
         maxZoom: 5,
@@ -202,11 +204,11 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
       // and updated separately via dragfree events
     ]);
 
-    // ── Sync node phase colours when phases or heatmap changes ─────────────
+    // ── Sync node phase colours when phases, heatmap, or template changes ──
     useEffect(() => {
       const cy = cyRef.current;
       if (!cy) return;
-      cy.style(generateCytoscapeStyle(props.theme));
+      cy.style(generateCytoscapeStyle(props.theme, props.publicationTemplate));
       
       const elements = buildCytoscapeElements(
         props.contexts, props.observations, props.phases, props.positions, props.showPhaseGroups, props.heatmapMode, props.events

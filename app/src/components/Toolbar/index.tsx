@@ -6,8 +6,9 @@ import React, { useRef, useState } from 'react';
 import {
   Undo2, Redo2, LayoutDashboard, Upload, Save, FolderOpen,
   Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun, 
-  Grid3X3, Flame
+  Grid3X3, Flame, FileText
 } from 'lucide-react';
+import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
 
 interface ToolbarProps {
   projectName: string;
@@ -35,6 +36,8 @@ interface ToolbarProps {
   onToggleTheme: () => void;
   publicationMode: boolean;
   onTogglePublicationMode: () => void;
+  publicationTemplate: PublicationTemplate;
+  onPublicationTemplateChange: (t: PublicationTemplate) => void;
   heatmapMode: boolean;
   onToggleHeatmapMode: () => void;
 }
@@ -65,15 +68,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleTheme,
   publicationMode,
   onTogglePublicationMode,
+  publicationTemplate,
+  onPublicationTemplateChange,
   heatmapMode,
   onToggleHeatmapMode
 }) => {
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(projectName);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const templateMenuRef = useRef<HTMLDivElement>(null);
 
   const commitName = () => {
     setEditingName(false);
@@ -174,6 +181,50 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <button className="tb-btn" onClick={onFitView} title="Fit view" aria-label="Fit view">
             <Maximize2 size={15} />
           </button>
+
+          {/* Publication Template Selector (visible in pub mode) */}
+          {publicationMode && (
+            <div style={{ position: 'relative', marginLeft: 4 }} ref={templateMenuRef}>
+              <button
+                className="tb-btn tb-btn--labeled"
+                onClick={() => setShowTemplateMenu(v => !v)}
+                title="Publication template style"
+                style={{ borderColor: 'var(--accent)' }}
+              >
+                <FileText size={14} />
+                <span style={{ textTransform: 'capitalize' }}>{publicationTemplate}</span>
+                <ChevronDown size={11} />
+              </button>
+              {showTemplateMenu && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                    onClick={() => setShowTemplateMenu(false)}
+                  />
+                  <div className="dropdown-menu" style={{ minWidth: 160 }}>
+                    <button
+                      className={`dropdown-item ${publicationTemplate === 'standard' ? 'dropdown-item--active' : ''}`}
+                      onClick={() => { onPublicationTemplateChange('standard'); setShowTemplateMenu(false); }}
+                    >
+                      Standard
+                    </button>
+                    <button
+                      className={`dropdown-item ${publicationTemplate === 'traditional' ? 'dropdown-item--active' : ''}`}
+                      onClick={() => { onPublicationTemplateChange('traditional'); setShowTemplateMenu(false); }}
+                    >
+                      Traditional (Harris)
+                    </button>
+                    <button
+                      className={`dropdown-item ${publicationTemplate === 'minimal' ? 'dropdown-item--active' : ''}`}
+                      onClick={() => { onPublicationTemplateChange('minimal'); setShowTemplateMenu(false); }}
+                    >
+                      Minimal (B&W)
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="toolbar-divider" />
