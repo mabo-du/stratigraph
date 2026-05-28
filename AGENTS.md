@@ -96,6 +96,7 @@ app/
 | `app/src-tauri/` | Tauri v2 desktop build (Rust backend, native dialogs) |
 | `app/src/utils/tauriBridge.ts` | Tauri<->browser bridge with native file dialog fallback |
 | `app/src/utils/offlineStorage.ts` | IndexedDB-backed offline project persistence |
+| `app/src/utils/trowelExport.ts` | Trowel-compatible EEDP JSON export |
 
 <!-- AI-CONTEXT-END -->
 

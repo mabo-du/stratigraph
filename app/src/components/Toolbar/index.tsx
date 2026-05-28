@@ -28,6 +28,7 @@ interface ToolbarProps {
   onExportPDF: () => void;
   onExportOxCal: () => void;
   onExportLibbyJson: () => void;
+  onExportTrowel: () => void;
   onExportHoardText: () => void;
   onExportHoardJson: () => void;
   onExportReport: () => void;
@@ -64,6 +65,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onExportPDF,
   onExportOxCal,
   onExportLibbyJson,
+  onExportTrowel,
   onExportHoardText,
   onExportHoardJson,
   onExportReport,
@@ -365,6 +367,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   onClick={() => { onExportGeoJSON(); setShowExportMenu(false); }}
                 >
                   Export GeoJSON (for QGIS)
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportTrowel(); setShowExportMenu(false); }}
+                >
+                  Export for Trowel (EEDP .json)
                 </button>
                 <button
                   className="dropdown-item"

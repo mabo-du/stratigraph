@@ -8,6 +8,7 @@ import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
 import { OfflineProjects } from './components/OfflineProjects';
 import { saveProject, loadProject, buildGeoJSON, exportGeoJSON } from './utils/fileUtils';
+import { generateTrowelEedp } from './utils/trowelExport';
 import type { PublicationTemplate } from './utils/cytoscapeHelpers';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
 import { generateOxCalScript, generateLibbyPayload } from './models/bayesianLogic';
@@ -302,6 +303,25 @@ function App() {
     }
   }, [state.contexts, state.observations, state.events, state.meta.projectName]);
 
+  const handleExportTrowel = useCallback(() => {
+    try {
+      const json = generateTrowelEedp(
+        state.meta.projectName, state.contexts, state.observations, state.events,
+      );
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_trowel_eedp.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate Trowel payload: ${err.message}`);
+    }
+  }, [state]);
+
   const handleExportReport = useCallback(() => {
     try {
       const report = generateMatrixReport(
@@ -381,6 +401,7 @@ function App() {
         onExportPDF={() => canvasRef.current?.exportPDF()}
         onExportOxCal={handleExportOxCal}
         onExportLibbyJson={handleExportLibbyJson}
+        onExportTrowel={handleExportTrowel}
         onExportHoardText={handleExportHoardText}
         onExportHoardJson={handleExportHoardJson}
         onExportReport={handleExportReport}
