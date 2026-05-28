@@ -466,6 +466,7 @@ function App() {
         <Sidebar
           contexts={state.contexts}
           observations={state.observations}
+          events={state.events}
           phases={state.phases}
           selectedId={state.selectedContextId}
           sidebarTab={state.sidebarTab}

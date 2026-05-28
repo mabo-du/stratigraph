@@ -5,13 +5,15 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, ChevronRight, Link, Unlink, Layers, MapPin } from 'lucide-react';
 import { RelationshipSuggestions } from '../RelationshipSuggestions';
-import type { Context, Observation, Phase } from '../../models/hmdp';
+import { CalibrationPanel } from '../CalibrationPanel';
+import type { Context, Observation, Phase, Event } from '../../models/hmdp';
 import { ContextType, RelationshipType } from '../../models/hmdp';
 import { DEFAULT_PHASE_COLORS } from '../../models/matrixState';
 
 interface SidebarProps {
   contexts: Context[];
   observations: Observation[];
+  events: Event[];
   phases: Phase[];
   selectedId: string | null;
   sidebarTab: 'units' | 'phases';
@@ -34,6 +36,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   contexts,
   observations,
+  events,
   phases,
   selectedId,
   sidebarTab,
@@ -101,12 +104,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {sidebarTab === 'phases' && (
-        <PhasePanel
-          phases={phases}
-          onAdd={onAddPhase}
-          onUpdate={onUpdatePhase}
-          onDelete={onDeletePhase}
-        />
+        <>
+          <PhasePanel
+            phases={phases}
+            onAdd={onAddPhase}
+            onUpdate={onUpdatePhase}
+            onDelete={onDeletePhase}
+          />
+          <CalibrationPanel events={events} />
+        </>
       )}
     </aside>
   );
@@ -538,7 +544,10 @@ interface PhasePanelProps {
   onDelete: (id: string) => void;
 }
 
-const PhasePanel: React.FC<PhasePanelProps> = ({ phases, onAdd, onUpdate, onDelete }) => {
+const PhasePanel: React.FC<PhasePanelProps> = ({
+  phases,
+  onAdd, onUpdate, onDelete,
+}) => {
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(
