@@ -7,7 +7,7 @@ import { Sidebar } from './components/Sidebar';
 import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
 import { OfflineProjects } from './components/OfflineProjects';
-import { saveProject, loadProject, buildGeoJSON, exportGeoJSON } from './utils/fileUtils';
+import { saveProject, loadProject, buildGeoJSON, exportGeoJSON, loadDemoProject } from './utils/fileUtils';
 import { generateTrowelEedp } from './utils/trowelExport';
 import type { PublicationTemplate } from './utils/cytoscapeHelpers';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
@@ -139,6 +139,31 @@ function App() {
           excavationYear: data.excavationYear ?? '',
           notes: data.notes ?? '',
         },
+        contexts: data.contexts ?? [],
+        observations: data.observations ?? [],
+        events: data.events ?? [],
+        phases: data.phases ?? [],
+        positions: data.positions ?? {},
+        dataVersion: 0,
+        selectedContextId: null,
+        showImportModal: false,
+        sidebarTab: 'units',
+        past: [],
+        future: [],
+      },
+    });
+  }, [dispatch]);
+
+  const handleLoadDemo = useCallback(async () => {
+    const data = await loadDemoProject();
+    if (!data) {
+      alert('Failed to load demo project. The demo file may not be available.');
+      return;
+    }
+    dispatch({
+      type: 'LOAD_PROJECT',
+      state: {
+        meta: data.meta,
         contexts: data.contexts ?? [],
         observations: data.observations ?? [],
         events: data.events ?? [],
@@ -396,6 +421,7 @@ function App() {
         onSave={handleSave}
         onLoad={() => loadInputRef.current?.click()}
         onShowOfflineProjects={() => setShowOfflineProjects(true)}
+        onLoadDemo={handleLoadDemo}
         onExportPNG={() => canvasRef.current?.exportPNG()}
         onExportSVG={() => canvasRef.current?.exportSVG()}
         onExportPDF={() => canvasRef.current?.exportPDF()}
