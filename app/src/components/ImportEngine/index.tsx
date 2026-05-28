@@ -5,6 +5,7 @@ import { ColumnMapper } from './ColumnMapper';
 import { parseCsvFile, applyContextMapping, applyObservationMapping, applyEventMapping } from '../../utils/csvParser';
 import { importHoardData } from '../../models/hoardImporter';
 import { parseLstFile } from '../../utils/lstParser';
+import { detectFieldSystem, suggestMappings } from '../../utils/smartImport';
 import type { HoardContextSheet } from '../../models/hoardImporter';
 import type { ContextMapping, ObservationMapping, EventMapping } from '../../utils/csvParser';
 import type { Context, Observation, Event } from '../../models/hmdp';
@@ -33,6 +34,11 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
   const [observations, setObservations] = useState<Observation[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
 
+  // ── Smart import state ────────────────────────────────────────────────────
+  const [detectedSystem, setDetectedSystem] = useState<string | null>(null);
+  const [contextSuggestions, setContextSuggestions] = useState<any>(null);
+  const [observationSuggestions, setObservationSuggestions] = useState<any>(null);
+
   // ── HOARD state ────────────────────────────────────────────────────────────
   const [hoardFiles, setHoardFiles] = useState<{ name: string; status: 'loaded' | 'error'; errors?: string }[]>([]);
   const [hoardResult, setHoardResult] = useState<{ contexts: Context[]; observations: Observation[] } | null>(null);
@@ -47,6 +53,13 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
       const result = await parseCsvFile(file);
       setContextHeaders(result.headers);
       setContextRows(result.rows);
+
+      // Smart import: detect system and suggest mappings
+      const system = detectFieldSystem(result.headers);
+      setDetectedSystem(system?.name ?? null);
+      const suggestions = suggestMappings(result.headers);
+      setContextSuggestions(suggestions);
+
       setStep('map-contexts');
     } catch (err: any) {
       setError(`Failed to parse Contexts CSV: ${err.message}`);
@@ -59,6 +72,13 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
       const result = await parseCsvFile(file);
       setObservationHeaders(result.headers);
       setObservationRows(result.rows);
+
+      // Smart import: detect system and suggest mappings
+      const system = detectFieldSystem(result.headers);
+      setDetectedSystem(system?.name ?? null);
+      const suggestions = suggestMappings(result.headers);
+      setObservationSuggestions(suggestions);
+
       setStep('map-observations');
     } catch (err: any) {
       setError(`Failed to parse Observations CSV: ${err.message}`);
@@ -717,6 +737,8 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
           headers={contextHeaders}
           onMappingComplete={handleContextMappingComplete}
           onCancel={() => setStep('upload')}
+          initialMapping={contextSuggestions}
+          detectedSystem={detectedSystem ?? undefined}
         />
       )}
 
@@ -727,6 +749,8 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
           headers={observationHeaders}
           onMappingComplete={handleObservationMappingComplete}
           onCancel={() => setStep('upload')}
+          initialMapping={observationSuggestions}
+          detectedSystem={detectedSystem ?? undefined}
         />
       )}
 

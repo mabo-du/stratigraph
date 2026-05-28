@@ -1,19 +1,33 @@
 import React, { useState } from 'react';
 import type { ContextMapping, ObservationMapping } from '../../utils/csvParser';
 import { RelationshipType } from '../../models/hmdp';
+import { mappingConfidence } from '../../utils/smartImport';
 
 interface ColumnMapperProps {
   type: 'context' | 'observation' | 'event';
   headers: string[];
   onMappingComplete: (mapping: any) => void;
   onCancel: () => void;
+  /** Optional pre-filled suggestions from smart import */
+  initialMapping?: Partial<ContextMapping | ObservationMapping>;
+  /** Detected system name for info display */
+  detectedSystem?: string;
 }
 
-export const ColumnMapper: React.FC<ColumnMapperProps> = ({ type, headers, onMappingComplete, onCancel }) => {
-  const [contextMapping, setContextMapping] = useState<Partial<ContextMapping>>({});
-  const [observationMapping, setObservationMapping] = useState<Partial<ObservationMapping>>({
-    defaultRelationship: RelationshipType.Above
-  });
+export const ColumnMapper: React.FC<ColumnMapperProps> = ({
+  type,
+  headers,
+  onMappingComplete,
+  onCancel,
+  initialMapping,
+  detectedSystem,
+}) => {
+  const [contextMapping, setContextMapping] = useState<Partial<ContextMapping>>(
+    (initialMapping as Partial<ContextMapping>) ?? {},
+  );
+  const [observationMapping, setObservationMapping] = useState<Partial<ObservationMapping>>(
+    (initialMapping as Partial<ObservationMapping>) ?? { defaultRelationship: RelationshipType.Above },
+  );
   const [eventMapping, setEventMapping] = useState<Partial<import('../../utils/csvParser').EventMapping>>({});
 
   const handleSelect = (field: string, value: string) => {
@@ -67,8 +81,33 @@ export const ColumnMapper: React.FC<ColumnMapperProps> = ({ type, headers, onMap
     );
   };
 
+  const confidence = type === 'context'
+    ? mappingConfidence(contextMapping as any)
+    : type === 'observation'
+    ? mappingConfidence({ idColumn: '', sourceColumn: observationMapping.sourceColumn || '', targetColumn: observationMapping.targetColumn || '' })
+    : 0;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {detectedSystem && (
+        <div style={{
+          padding: '0.5rem 0.75rem',
+          background: 'var(--accent-dim)',
+          border: '1px solid var(--accent)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '0.8rem',
+          color: 'var(--text)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span>Detected:</span>
+          <strong>{detectedSystem}</strong>
+          <span style={{ color: 'var(--text-2)', marginLeft: 'auto' }}>
+            {confidence >= 0.66 ? '✓ Columns pre-filled' : 'Partial match'}
+          </span>
+        </div>
+      )}
       <p style={{ color: 'var(--text-2)', fontSize: '0.85rem' }}>
         Match the columns from your CSV to the required fields below.
       </p>
