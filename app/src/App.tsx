@@ -7,6 +7,7 @@ import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
+import { Dashboard } from './components/Dashboard';
 import { OfflineProjects } from './components/OfflineProjects';
 import { saveProject, loadProject, buildGeoJSON, exportGeoJSON, loadDemoProject } from './utils/fileUtils';
 import { generateTrowelEedp } from './utils/trowelExport';
@@ -43,6 +44,7 @@ function App() {
   const [publicationTemplate, setPublicationTemplate] = useState<PublicationTemplate>('standard');
   const [heatmapMode, setHeatmapMode] = useState(false);
   const [show3D, setShow3D] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   // Sync theme to document body
   useEffect(() => {
@@ -488,6 +490,8 @@ function App() {
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
         show3D={show3D}
         onToggle3D={() => setShow3D(prev => !prev)}
+        showDashboard={showDashboard}
+        onToggleDashboard={() => setShowDashboard(prev => !prev)}
         collabConnected={collab.isConnected}
         collabStatus={collab.status}
         collabUsers={collab.users.map(u => ({
@@ -532,7 +536,9 @@ function App() {
           onSetTab={tab => dispatch({ type: 'SET_SIDEBAR_TAB', tab })}
         />
 
-        {show3D ? (
+        {showDashboard ? (
+          <Dashboard />
+        ) : show3D ? (
           <Scene3D
             contexts={state.contexts}
             phases={state.phases}

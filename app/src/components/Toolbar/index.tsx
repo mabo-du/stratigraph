@@ -62,6 +62,8 @@ interface ToolbarProps {
   onToggleHeatmapMode: () => void;
   show3D: boolean;
   onToggle3D: () => void;
+  showDashboard?: boolean;
+  onToggleDashboard?: () => void;
   // Collaboration props
   collabConnected: boolean;
   collabStatus: SyncStatus;
@@ -111,6 +113,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleHeatmapMode,
   show3D,
   onToggle3D,
+  showDashboard,
+  onToggleDashboard,
   theme,
   onToggleTheme,
   collabConnected,
@@ -303,6 +307,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         
         {/* Visuals */}
         <div className="toolbar-group">
+          <button
+            className={`tb-btn ${showDashboard ? 'tb-btn--accent' : ''}`}
+            onClick={onToggleDashboard}
+            title="Multi-site Dashboard"
+          >
+            <LayoutDashboard size={15} />
+          </button>
           <button
             className={`tb-btn ${show3D ? 'tb-btn--accent' : ''}`}
             onClick={onToggle3D}
