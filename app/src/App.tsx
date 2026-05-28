@@ -11,6 +11,7 @@ import type { PublicationTemplate } from './utils/cytoscapeHelpers';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
 import { generateOxCalScript } from './models/bayesianLogic';
 import { generateHoardMarkdown, generateHoardJson } from './models/hoardExport';
+import { generateMatrixReport } from './models/hoardReport';
 import { RelationshipType } from './models/hmdp';
 import type { Context, Observation, Phase } from './models/hmdp';
 import type { LayoutPosition } from './models/matrixState';
@@ -255,6 +256,44 @@ function App() {
     }
   }, [state.contexts, state.observations, state.events, state.meta.projectName]);
 
+  const handleExportReport = useCallback(() => {
+    try {
+      const report = generateMatrixReport(
+        state.meta.projectName, state.contexts, state.observations, state.phases, state.events,
+      );
+      const blob = new Blob([report.markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate report: ${err.message}`);
+    }
+  }, [state]);
+
+  const handleExportReportJson = useCallback(() => {
+    try {
+      const report = generateMatrixReport(
+        state.meta.projectName, state.contexts, state.observations, state.phases, state.events,
+      );
+      const blob = new Blob([report.json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate report JSON: ${err.message}`);
+    }
+  }, [state]);
+
   const handleExportGeoJSON = useCallback(() => {
     try {
       const result = buildGeoJSON(state);
@@ -296,6 +335,8 @@ function App() {
         onExportOxCal={handleExportOxCal}
         onExportHoardText={handleExportHoardText}
         onExportHoardJson={handleExportHoardJson}
+        onExportReport={handleExportReport}
+        onExportReportJson={handleExportReportJson}
         onExportGeoJSON={handleExportGeoJSON}
         contextCount={state.contexts.length}
         showPhaseGroups={showPhaseGroups}
