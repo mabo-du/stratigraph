@@ -19,6 +19,7 @@ import { RelationshipType } from './models/hmdp';
 import type { Context, Observation, Phase } from './models/hmdp';
 import type { LayoutPosition } from './models/matrixState';
 import { useCollaboration } from './collaboration/useCollaboration';
+import { useConflictToast } from './components/ConflictToast';
 
 function generateUserId(): string {
   let id = localStorage.getItem('stratigraph-user-id');
@@ -429,6 +430,21 @@ function App() {
     syncServer: state.meta.syncServer,
   });
 
+  // Conflict notifications
+  const { toast: conflictToast, showConflict } = useConflictToast();
+  const previousEdgesRef = useRef(state.observations.length);
+  useEffect(() => {
+    if (state.observations.length > previousEdgesRef.current) {
+      // Check for cycles after each new edge
+      const adj = buildAdjacencyList(state.observations);
+      const cycle = findCyclePath(adj);
+      if (cycle && cycle.length > 0) {
+        showConflict(`⚠ Cycle detected — edge between ${cycle[0]} and ${cycle[cycle.length - 1]} creates an impossible stratigraphic relationship`);
+      }
+    }
+    previousEdgesRef.current = state.observations.length;
+  }, [state.observations, showConflict]);
+
   return (
     <div className="app-shell">
       <Toolbar
@@ -485,10 +501,8 @@ function App() {
         onStartSession={collab.startSession}
         onLeaveSession={collab.leaveSession}
       />
-
-      {/* Hidden file input for project load */}
-      <input
-        ref={loadInputRef}
+      {conflictToast}
+      <input ref={loadInputRef}
         type="file"
         accept=".json,.hmatrix.json"
         style={{ display: 'none' }}
