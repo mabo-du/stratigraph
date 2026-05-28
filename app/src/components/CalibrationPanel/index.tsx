@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { FlaskConical, ChevronDown, ChevronRight } from 'lucide-react';
-import { loadCurve, calibrateDate } from '../../utils/calibration';
-import type { CalibratedResult, CurvePoint } from '../../utils/calibration';
-import type { Event } from '../../models/hmdp';
+import { loadCurve, calibrateDate, calibrateSequence } from '../../utils/calibration';
+import type { CalibratedResult, CurvePoint, ConstrainedResult } from '../../utils/calibration';
+import type { Event, Observation } from '../../models/hmdp';
+import { RelationshipType } from '../../models/hmdp';
 
 interface CalibrationPanelProps {
   events: Event[];
+  observations: Observation[];
 }
 
-export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events }) => {
+export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events, observations }) => {
   const [curve, setCurve] = useState<CurvePoint[] | null>(null);
   const [curveLoading, setCurveLoading] = useState(true);
   const [curveError, setCurveError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
-  const [results, setResults] = useState<Map<string, CalibratedResult>>(new Map());
+  const [results, setResults] = useState<Map<string, CalibratedResult | ConstrainedResult>>(new Map());
   const [calibrating, setCalibrating] = useState(false);
+  const [showConstrained, setShowConstrained] = useState(true);
+  const [hasConstraints] = useState(() =>
+    observations.some(o =>
+      o.relationshipType === RelationshipType.Above || o.relationshipType === RelationshipType.Below,
+    ),
+  );
 
   // Load curve on mount
   useEffect(() => {
@@ -30,23 +38,58 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events }) =>
   useEffect(() => {
     if (!curve || events.length === 0) return;
     setCalibrating(true);
-    const newResults = new Map<string, CalibratedResult>();
+    const newResults = new Map<string, CalibratedResult | ConstrainedResult>();
+
+    // Build stratigraphic constraints from observations
+    const directionalObs = observations.filter(
+      o => o.relationshipType === RelationshipType.Above || o.relationshipType === RelationshipType.Below,
+    );
+    const constraints: { older: string; younger: string }[] = [];
+    for (const obs of directionalObs) {
+      if (obs.relationshipType === RelationshipType.Above) {
+        constraints.push({ older: obs.target, younger: obs.source });
+      } else {
+        constraints.push({ older: obs.source, younger: obs.target });
+      }
+    }
+
+    // Build event maps for sequence calibration
+    const dateEvents = new Map<string, { c14BP: number; sigma: number; contextId: string }>();
+    const contextEvents = new Map<string, string[]>();
 
     for (const event of events) {
       if (!event.rDate || event.type !== 'C14') continue;
       const parts = event.rDate.split(',').map(s => s.trim());
-      if (parts.length === 2) {
-        const bp = parseInt(parts[0]);
-        const sigma = parseInt(parts[1]);
-        if (!isNaN(bp) && !isNaN(sigma)) {
-          newResults.set(event.id, calibrateDate(curve, bp, sigma));
-        }
+      if (parts.length !== 2) continue;
+      const bp = parseInt(parts[0]);
+      const sigma = parseInt(parts[1]);
+      if (isNaN(bp) || isNaN(sigma)) continue;
+
+      dateEvents.set(event.id, { c14BP: bp, sigma, contextId: String(event.contextId) });
+
+      const ctxId = String(event.contextId);
+      if (!contextEvents.has(ctxId)) contextEvents.set(ctxId, []);
+      contextEvents.get(ctxId)!.push(event.id);
+    }
+
+    if (dateEvents.size === 0) { setCalibrating(false); return; }
+
+    if (constraints.length > 0) {
+      // Sequence calibration with constraints
+      const seqResults = calibrateSequence(curve, dateEvents, constraints, contextEvents);
+      for (const [id, r] of seqResults) newResults.set(id, r);
+    }
+
+    // Fallback: individual calibration for any events not in sequence results
+    for (const [id, ev] of dateEvents) {
+      if (!newResults.has(id)) {
+        newResults.set(id, calibrateDate(curve, ev.c14BP, ev.sigma));
       }
     }
 
     setResults(newResults);
     setCalibrating(false);
-  }, [curve, events]);
+  }, [curve, events, observations]);
 
   const c14Events = events.filter(e => e.type === 'C14' && e.rDate);
 
@@ -93,6 +136,21 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events }) =>
 
           {!curveLoading && !calibrating && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* Toggle for constrained mode */}
+              {hasConstraints && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showConstrained}
+                      onChange={() => setShowConstrained(v => !v)}
+                      style={{ accentColor: 'var(--accent)' }}
+                    />
+                    Apply stratigraphic constraints
+                  </label>
+                </div>
+              )}
+
               {c14Events.map(event => {
                 const result = results.get(event.id);
 
@@ -115,6 +173,7 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events }) =>
                     key={event.id}
                     event={event}
                     result={result}
+                    showConstrained={showConstrained}
                     formatCalendar={formatCalendar}
                     formatRange={formatRange}
                   />
@@ -132,16 +191,25 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events }) =>
 
 interface CardProps {
   event: Event;
-  result: CalibratedResult;
+  result: CalibratedResult | ConstrainedResult;
+  showConstrained: boolean;
   formatCalendar: (bp: number) => string;
   formatRange: (r: { from: number; to: number }) => string;
 }
 
-const CalibratedDateCard: React.FC<CardProps> = ({ event, result, formatCalendar, formatRange }) => {
+const CalibratedDateCard: React.FC<CardProps> = ({ event, result, showConstrained, formatCalendar, formatRange }) => {
   const [showPlot, setShowPlot] = useState(false);
 
+  // Use constrained or unconstrained density for plotting
+  const isConstrained = 'constrained' in result && (result as ConstrainedResult).constrained && showConstrained;
+  const displayResult = isConstrained ? (result as ConstrainedResult).unconstrained : result;
+
+  // If showing constrained, use constrained data
+  const activeResult = isConstrained ? result : displayResult;
+  const constrainedInfo = 'constrained' in result ? (result as ConstrainedResult) : null;
+
   // Find max density for plot scaling
-  const maxProb = Math.max(...result.density.map(p => p.prob));
+  const maxProb = Math.max(...activeResult.density.map(p => p.prob));
 
   return (
     <div style={{
@@ -168,10 +236,17 @@ const CalibratedDateCard: React.FC<CardProps> = ({ event, result, formatCalendar
         </button>
       </div>
 
+      {/* Constrained badge */}
+      {constrainedInfo?.constrained && (
+        <div style={{ fontSize: '0.68rem', color: '#5b9bd5', marginTop: 2, fontWeight: 500 }}>
+          ⚙ Constrained by {constrainedInfo.constrainedByOlder.length} older + {constrainedInfo.constrainedByYounger.length} younger event(s)
+        </div>
+      )}
+
       {/* 2σ range */}
       <div style={{ marginTop: 4, color: 'var(--text-2)', lineHeight: 1.5 }}>
         <span style={{ fontWeight: 500 }}>95.4%:</span>
-        {result.range2σ.map((r, i) => (
+        {activeResult.range2σ.map((r, i) => (
           <div key={i} style={{ paddingLeft: 12, fontSize: '0.72rem' }}>
             {formatRange(r)}
           </div>
@@ -181,7 +256,7 @@ const CalibratedDateCard: React.FC<CardProps> = ({ event, result, formatCalendar
       {/* 1σ range */}
       <div style={{ color: 'var(--text-2)', lineHeight: 1.5 }}>
         <span style={{ fontWeight: 500 }}>68.2%:</span>
-        {result.range1σ.map((r, i) => (
+        {activeResult.range1σ.map((r, i) => (
           <div key={i} style={{ paddingLeft: 12, fontSize: '0.72rem' }}>
             {formatRange(r)}
           </div>
@@ -198,16 +273,16 @@ const CalibratedDateCard: React.FC<CardProps> = ({ event, result, formatCalendar
           borderRadius: 'var(--radius-sm)',
           overflow: 'hidden',
         }}>
-          {result.density.map((p, i) => (
+          {activeResult.density.map((p, i) => (
             <div
               key={i}
               style={{
                 position: 'absolute',
                 bottom: 0,
-                left: `${((p.calBP - result.density[result.density.length - 1].calBP) / (result.density[0].calBP - result.density[result.density.length - 1].calBP)) * 100}%`,
-                width: `${100 / result.density.length * 1.5}%`,
+                left: `${((p.calBP - activeResult.density[activeResult.density.length - 1].calBP) / (activeResult.density[0].calBP - activeResult.density[activeResult.density.length - 1].calBP)) * 100}%`,
+                width: `${100 / activeResult.density.length * 1.5}%`,
                 height: `${(p.prob / maxProb) * 100}%`,
-                background: 'var(--accent)',
+                background: constrainedInfo?.constrained && isConstrained ? '#5b9bd5' : 'var(--accent)',
                 opacity: 0.7,
                 minWidth: 1,
               }}

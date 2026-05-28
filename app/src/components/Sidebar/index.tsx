@@ -111,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onUpdate={onUpdatePhase}
             onDelete={onDeletePhase}
           />
-          <CalibrationPanel events={events} />
+          <CalibrationPanel events={events} observations={observations} />
         </>
       )}
     </aside>
