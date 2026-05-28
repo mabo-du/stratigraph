@@ -26,6 +26,7 @@ interface ToolbarProps {
   onExportSVG: () => void;
   onExportPDF: () => void;
   onExportOxCal: () => void;
+  onExportLibbyJson: () => void;
   onExportHoardText: () => void;
   onExportHoardJson: () => void;
   onExportReport: () => void;
@@ -60,6 +61,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onExportSVG,
   onExportPDF,
   onExportOxCal,
+  onExportLibbyJson,
   onExportHoardText,
   onExportHoardJson,
   onExportReport,
@@ -327,7 +329,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   className="dropdown-item"
                   onClick={() => { onExportOxCal(); setShowExportMenu(false); }}
                 >
-                  Export for Libby (.oxcal)
+                  Export for Libby (CQL)
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportLibbyJson(); setShowExportMenu(false); }}
+                >
+                  Export for Libby (JSON)
                 </button>
                 <div style={{ height: 1, background: 'var(--border-2)', margin: '4px 0' }} />
                 <button

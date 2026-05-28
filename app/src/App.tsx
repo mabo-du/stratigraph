@@ -9,7 +9,7 @@ import { SearchOverlay } from './components/SearchOverlay';
 import { saveProject, loadProject, buildGeoJSON, exportGeoJSON } from './utils/fileUtils';
 import type { PublicationTemplate } from './utils/cytoscapeHelpers';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
-import { generateOxCalScript } from './models/bayesianLogic';
+import { generateOxCalScript, generateLibbyPayload } from './models/bayesianLogic';
 import { generateHoardMarkdown, generateHoardJson } from './models/hoardExport';
 import { generateMatrixReport } from './models/hoardReport';
 import { RelationshipType } from './models/hmdp';
@@ -205,6 +205,25 @@ function App() {
   }, [dispatch, state.observations]);
 
   // ── Bayesian Export ─────────────────────────────────────────────────────
+  const handleExportLibbyJson = useCallback(() => {
+    try {
+      const payload = generateLibbyPayload(
+        state.meta.projectName, state.contexts, state.observations, state.events,
+      );
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_libby.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate Libby payload: ${err.message}`);
+    }
+  }, [state]);
+
   const handleExportOxCal = useCallback(() => {
     try {
       const script = generateOxCalScript(state.contexts, state.observations, state.events);
@@ -333,6 +352,7 @@ function App() {
         onExportSVG={() => canvasRef.current?.exportSVG()}
         onExportPDF={() => canvasRef.current?.exportPDF()}
         onExportOxCal={handleExportOxCal}
+        onExportLibbyJson={handleExportLibbyJson}
         onExportHoardText={handleExportHoardText}
         onExportHoardJson={handleExportHoardJson}
         onExportReport={handleExportReport}
