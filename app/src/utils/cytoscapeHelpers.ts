@@ -25,21 +25,28 @@ export function buildCytoscapeElements(
   positions: Record<string, LayoutPosition>,
   showPhaseGroups: boolean = false,
   heatmapMode: boolean = false,
-  events: Event[] = []
+  events: Event[] = [],
+  collapsedPhases: Set<string> = new Set(),
 ): ElementDefinition[] {
   const phaseMap = new Map(phases.map(p => [p.id, p]));
   const elements: ElementDefinition[] = [];
+
+  // Build a set of collapsed phase IDs for fast lookup
+  const isCollapsed = (phaseId: string) => showPhaseGroups && collapsedPhases.has(phaseId);
 
   // If grouping is enabled, create Phase parent nodes first
   if (showPhaseGroups) {
     const activePhases = new Set(contexts.filter(c => c.phase).map(c => c.phase!));
     for (const phase of phases) {
       if (activePhases.has(phase.id)) {
+        const count = contexts.filter(c => c.phase === phase.id).length;
+        const collapsed = collapsedPhases.has(phase.id);
         elements.push({
           data: {
             id: phase.id,
-            label: phase.name,
+            label: collapsed ? `${phase.name} (${count})` : phase.name,
             phaseColor: phase.color,
+            collapsedCount: collapsed ? count : undefined,
           },
         });
       }
@@ -58,6 +65,9 @@ export function buildCytoscapeElements(
 
   for (const ctx of contexts) {
     const phase = ctx.phase ? phaseMap.get(ctx.phase) : undefined;
+    // Skip individual nodes inside collapsed phases
+    if (phase && isCollapsed(phase.id)) continue;
+
     const parent = showPhaseGroups && phase ? phase.id : undefined;
     const pos = positions[ctx.id];
 
@@ -92,9 +102,16 @@ export function buildCytoscapeElements(
     });
   }
 
+  // Build a lookup for context → phase
+  const ctxPhaseMap = new Map(contexts.filter(c => c.phase).map(c => [c.id, c.phase!]));
+
   // Edges — only use Above relationships for the directed graph
   // Equals/Contemporary are rendered differently
   for (const obs of observations) {
+    // Skip edges where either endpoint is in a collapsed phase
+    const srcPhase = ctxPhaseMap.get(obs.source);
+    const tgtPhase = ctxPhaseMap.get(obs.target);
+    if ((srcPhase && isCollapsed(srcPhase)) || (tgtPhase && isCollapsed(tgtPhase))) continue;
     // Normalise direction: source is always the "above" (earlier in time = higher in matrix)
     let source = obs.source;
     let target = obs.target;

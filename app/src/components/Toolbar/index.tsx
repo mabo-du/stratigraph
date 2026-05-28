@@ -38,6 +38,9 @@ interface ToolbarProps {
   contextCount: number;
   showPhaseGroups: boolean;
   onTogglePhaseGroups: () => void;
+  collapsedPhases: Set<string>;
+  onCollapseAllPhases: () => void;
+  onExpandAllPhases: () => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   publicationMode: boolean;
@@ -76,14 +79,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   contextCount,
   showPhaseGroups,
   onTogglePhaseGroups,
-  theme,
-  onToggleTheme,
+  collapsedPhases,
+  onCollapseAllPhases,
+  onExpandAllPhases,
   publicationMode,
   onTogglePublicationMode,
   publicationTemplate,
   onPublicationTemplateChange,
   heatmapMode,
-  onToggleHeatmapMode
+  onToggleHeatmapMode,
+  theme,
+  onToggleTheme,
 }) => {
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(projectName);
@@ -186,6 +192,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <BoxSelect size={15} />
             <span>Groups</span>
           </button>
+          {showPhaseGroups && (
+            <>
+              <button
+                className="tb-btn"
+                onClick={onCollapseAllPhases}
+                title="Collapse all phase groups"
+                disabled={collapsedPhases.size === 0}
+                style={{ fontSize: '0.8rem', lineHeight: 1 }}
+              >
+                ⏷
+              </button>
+              <button
+                className="tb-btn"
+                onClick={onExpandAllPhases}
+                title="Expand all phase groups"
+                disabled={collapsedPhases.size === 0}
+                style={{ fontSize: '0.8rem', lineHeight: 1 }}
+              >
+                ⏶
+              </button>
+            </>
+          )}
           <button className="tb-btn tb-btn--labeled" onClick={onAutoLayout} title="Auto-layout matrix">
             <LayoutDashboard size={15} />
             <span>Auto Layout</span>

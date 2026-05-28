@@ -25,6 +25,7 @@ function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [showOfflineProjects, setShowOfflineProjects] = useState(false);
   const [showPhaseGroups, setShowPhaseGroups] = useState(true);
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(new Set());
   const [theme, setTheme] = useState<'dark'|'light'>('dark');
   const [publicationMode, setPublicationMode] = useState(false);
   const [publicationTemplate, setPublicationTemplate] = useState<PublicationTemplate>('standard');
@@ -434,8 +435,11 @@ function App() {
         onExportReportJson={handleExportReportJson}
         onExportGeoJSON={handleExportGeoJSON}
         contextCount={state.contexts.length}
-        showPhaseGroups={showPhaseGroups}
-        onTogglePhaseGroups={() => setShowPhaseGroups(prev => !prev)}
+          showPhaseGroups={showPhaseGroups}
+          onTogglePhaseGroups={() => setShowPhaseGroups(prev => !prev)}
+          collapsedPhases={collapsedPhases}
+          onCollapseAllPhases={() => setCollapsedPhases(new Set(state.phases.map(p => p.id)))}
+          onExpandAllPhases={() => setCollapsedPhases(new Set())}
         theme={theme}
         onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
         publicationMode={publicationMode}
@@ -487,6 +491,7 @@ function App() {
           selectedContextId={state.selectedContextId}
           projectName={state.meta.projectName}
           showPhaseGroups={showPhaseGroups}
+          collapsedPhases={collapsedPhases}
           dataVersion={state.dataVersion}
           theme={theme}
           publicationMode={publicationMode}

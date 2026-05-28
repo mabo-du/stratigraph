@@ -54,6 +54,7 @@ interface MatrixCanvasProps {
   selectedContextId: string | null;
   projectName: string;
   showPhaseGroups: boolean;
+  collapsedPhases: Set<string>;
   theme: 'dark' | 'light';
   publicationMode: boolean;
   publicationTemplate: PublicationTemplate;
@@ -175,7 +176,8 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
             props.positions,
             props.showPhaseGroups,
             props.heatmapMode,
-            props.events
+            props.events,
+            props.collapsedPhases,
           )
         );
         performance.mark('cy-add-end');
@@ -211,7 +213,7 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
       cy.style(generateCytoscapeStyle(props.theme, props.publicationTemplate));
       
       const elements = buildCytoscapeElements(
-        props.contexts, props.observations, props.phases, props.positions, props.showPhaseGroups, props.heatmapMode, props.events
+        props.contexts, props.observations, props.phases, props.positions, props.showPhaseGroups, props.heatmapMode, props.events, props.collapsedPhases
       );
       const nodeElements = elements.filter(el => !el.data?.source);
       nodeElements.forEach(el => {
