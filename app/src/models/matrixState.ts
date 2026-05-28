@@ -10,6 +10,12 @@ export interface ProjectMeta {
   siteName: string;
   excavationYear: string;
   notes: string;
+  /** Room ID for Yjs collaboration session */
+  roomId?: string;
+  /** Encryption key for Yjs collaboration session */
+  roomKey?: string;
+  /** Optional WebSocket sync server URL */
+  syncServer?: string;
 }
 
 export interface LayoutPosition {
