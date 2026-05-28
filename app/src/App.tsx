@@ -6,7 +6,7 @@ import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
-import { saveProject, loadProject } from './utils/fileUtils';
+import { saveProject, loadProject, buildGeoJSON, exportGeoJSON } from './utils/fileUtils';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
 import { generateOxCalScript } from './models/bayesianLogic';
 import { generateHoardMarkdown, generateHoardJson } from './models/hoardExport';
@@ -253,6 +253,27 @@ function App() {
     }
   }, [state.contexts, state.observations, state.events, state.meta.projectName]);
 
+  const handleExportGeoJSON = useCallback(() => {
+    try {
+      const result = buildGeoJSON(state);
+      if (result.featureCount === 0) {
+        if (result.totalContexts === 0) {
+          alert('No contexts in project. Add contexts first, then try again.');
+        } else {
+          alert(
+            `No contexts with spatial coordinates found.\n\n` +
+            `${result.totalContexts} contexts exist but none have spatial centroids.\n` +
+            `Import contexts with centroid X/Y columns via CSV import, then try again.`
+          );
+        }
+        return;
+      }
+      exportGeoJSON(state);
+    } catch (err: any) {
+      alert(`Failed to export GeoJSON: ${err.message}`);
+    }
+  }, [state]);
+
   return (
     <div className="app-shell">
       <Toolbar
@@ -273,6 +294,7 @@ function App() {
         onExportOxCal={handleExportOxCal}
         onExportHoardText={handleExportHoardText}
         onExportHoardJson={handleExportHoardJson}
+        onExportGeoJSON={handleExportGeoJSON}
         contextCount={state.contexts.length}
         showPhaseGroups={showPhaseGroups}
         onTogglePhaseGroups={() => setShowPhaseGroups(prev => !prev)}

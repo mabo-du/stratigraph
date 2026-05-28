@@ -27,6 +27,7 @@ interface ToolbarProps {
   onExportOxCal: () => void;
   onExportHoardText: () => void;
   onExportHoardJson: () => void;
+  onExportGeoJSON: () => void;
   contextCount: number;
   showPhaseGroups: boolean;
   onTogglePhaseGroups: () => void;
@@ -56,6 +57,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onExportOxCal,
   onExportHoardText,
   onExportHoardJson,
+  onExportGeoJSON,
   contextCount,
   showPhaseGroups,
   onTogglePhaseGroups,
@@ -273,6 +275,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   Export for Libby (.oxcal)
                 </button>
                 <div style={{ height: 1, background: 'var(--border-2)', margin: '4px 0' }} />
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportGeoJSON(); setShowExportMenu(false); }}
+                >
+                  Export GeoJSON (for QGIS)
+                </button>
                 <button
                   className="dropdown-item"
                   onClick={() => { onExportHoardText(); setShowExportMenu(false); }}

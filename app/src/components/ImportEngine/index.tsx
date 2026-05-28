@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Dropzone } from './Dropzone';
 import { ColumnMapper } from './ColumnMapper';
 import { parseCsvFile, applyContextMapping, applyObservationMapping, applyEventMapping } from '../../utils/csvParser';

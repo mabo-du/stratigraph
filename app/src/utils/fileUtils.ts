@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * fileUtils.ts — Save/load project JSON, export PNG/SVG.
- * exports: saveProject, loadProject, exportPNG, exportSVGFallback
+ * fileUtils.ts — Save/load project JSON, export PNG/SVG, export GeoJSON.
+ * exports: saveProject, loadProject, exportPNG, exportSVGFallback, exportPDF, exportGeoJSON
  */
 
 import type { Core } from 'cytoscape';
@@ -157,4 +157,83 @@ export function exportPDF(cy: Core, projectName: string) {
   
   const safeName = projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
   doc.save(`${safeName}_matrix.pdf`);
+}
+
+// ── GeoJSON Export ───────────────────────────────────────────────────────────
+
+export interface GeoJSONResult {
+  json: string;
+  featureCount: number;
+  totalContexts: number;
+  skippedContexts: number;
+}
+
+/**
+ * Build a GeoJSON FeatureCollection from contexts with spatial centroids.
+ * Pure function — does not trigger a download. Returns the JSON string
+ * and metadata so callers can notify the user about skipped contexts.
+ */
+export function buildGeoJSON(state: MatrixState): GeoJSONResult {
+  const features: any[] = [];
+  let skipped = 0;
+
+  for (const ctx of state.contexts) {
+    const centroid = ctx.spatial?.centroid;
+    if (!centroid) {
+      skipped++;
+      continue;
+    }
+
+    features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [centroid.x, centroid.y, centroid.z ?? 0],
+      },
+      properties: {
+        id: ctx.id,
+        type: ctx.type,
+        description: ctx.description ?? '',
+        period: ctx.period ?? '',
+        phase: ctx.phase ?? '',
+        crs: ctx.spatial?.crs ?? '',
+      },
+    });
+  }
+
+  const collection: any = {
+    type: 'FeatureCollection',
+    crs: {
+      type: 'name',
+      properties: { name: 'urn:ogc:def:crs:OGC:1.3:CRS84' },
+    },
+    metadata: {
+      projectName: state.meta.projectName,
+      siteName: state.meta.siteName,
+      generatedAt: new Date().toISOString(),
+      totalContexts: state.contexts.length,
+      georeferencedFeatures: features.length,
+      skippedContexts: skipped,
+    },
+    features,
+  };
+
+  return {
+    json: JSON.stringify(collection, null, 2),
+    featureCount: features.length,
+    totalContexts: state.contexts.length,
+    skippedContexts: skipped,
+  };
+}
+
+/**
+ * Export contexts with spatial metadata as a GeoJSON FeatureCollection.
+ * Convenience wrapper that builds the GeoJSON and triggers a file download.
+ */
+export function exportGeoJSON(state: MatrixState): string {
+  const { json } = buildGeoJSON(state);
+  const blob = new Blob([json], { type: 'application/geo+json' });
+  const safeName = state.meta.projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  downloadBlob(blob, `${safeName}_contexts.geojson`);
+  return json;
 }
