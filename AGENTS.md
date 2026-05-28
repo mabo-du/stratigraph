@@ -6,9 +6,11 @@
 
 - **Build**: `cd app && npm run build` (tsc -b && vite build)
 - **Dev**: `cd app && npm run dev`
-- **Test**: `cd app && npm run test` (vitest — 6 test suites, all passing)
+- **Test**: `cd app && npm run test` (vitest — 7 test suites, all passing)
 - **Lint**: `cd app && npm run lint`
 - **Preview**: `cd app && npm run preview`
+- **Desktop dev**: `cd app && npm run tauri:dev` (Tauri + Vite hot-reload)
+- **Desktop build**: `cd app && npm run tauri:build` (produces .deb, .rpm, .AppImage)
 - **Deploy**: `git push` triggers `.github/workflows/deploy.yml`
 
 ## Project Overview
@@ -34,27 +36,36 @@ full feature list.
 ## Architecture
 
 ```
-app/src/
-├── models/           # HMDP data types, DAG engine, OxCal export, HOARD I/O
-│   ├── hmdp.ts           — Context, Observation, Phase, Event, SpatialMetadata
-│   ├── graphLogic.ts     — Cycle detection, transitive reduction (Dye & Buck)
-│   ├── bayesianLogic.ts  — OxCal CQL script generation
-│   ├── hoardImporter.ts  — HOARD Phase 1 JSON import + inference engine
-│   ├── hoardExport.ts    — EEDP path extraction for hallucination-free AI
-│   ├── matrixState.ts    — State types + actions (undo/redo)
-│   └── *.test.ts         — 6 test files covering all modules
-├── hooks/
-│   └── useMatrixStore.ts — useReducer central store with undo/redo
-├── components/
-│   ├── MatrixCanvas/     — Cytoscape.js DAG renderer (Dagre layout)
-│   ├── Toolbar/          — Top toolbar (import/export/save/load/views)
-│   ├── Sidebar/          — Unit list, node editor, phase management
-│   ├── ImportEngine/     — CSV wizard + HOARD JSON import with column mapping
-│   └── SearchOverlay/    — Ctrl+F palette
-└── utils/
-    ├── csvParser.ts      — PapaParse-based CSV import with flexible column mapping
-    ├── fileUtils.ts      — .hmatrix.json save/load, PNG/SVG/PDF export
-    └── cytoscapeHelpers.ts — Element builders, style generators
+app/
+├── src/                     # React + TypeScript frontend
+│   ├── models/              # HMDP data types, DAG engine, OxCal export, HOARD I/O
+│   │   ├── hmdp.ts              — Context, Observation, Phase, Event, SpatialMetadata
+│   │   ├── graphLogic.ts        — Cycle detection, transitive reduction (Dye & Buck)
+│   │   ├── bayesianLogic.ts     — OxCal CQL script generation
+│   │   ├── hoardImporter.ts     — HOARD Phase 1 JSON import + inference engine
+│   │   ├── hoardExport.ts       — EEDP path extraction for hallucination-free AI
+│   │   ├── matrixState.ts       — State types + actions (undo/redo)
+│   │   └── *.test.ts            — 7 test files covering all modules
+│   ├── hooks/
+│   │   └── useMatrixStore.ts    — useReducer central store with undo/redo
+│   ├── components/
+│   │   ├── MatrixCanvas/        — Cytoscape.js DAG renderer (Dagre layout)
+│   │   ├── Toolbar/             — Top toolbar (import/export/save/load/views)
+│   │   ├── Sidebar/             — Unit list, node editor, phase management
+│   │   ├── ImportEngine/        — CSV wizard + HOARD JSON import with column mapping
+│   │   └── SearchOverlay/       — Ctrl+F palette
+│   └── utils/
+│       ├── csvParser.ts         — PapaParse-based CSV import with flexible column mapping
+│       ├── fileUtils.ts         — .hmatrix.json save/load, GeoJSON/PNG/SVG/PDF export
+│       ├── tauriBridge.ts       — Tauri native dialog bridge with browser fallback
+│       └── cytoscapeHelpers.ts  — Element builders, style generators
+├── src-tauri/               # Tauri v2 Rust backend (desktop builds)
+│   ├── src/lib.rs               — Tauri app setup with dialog + fs plugins
+│   ├── Cargo.toml               — Rust dependencies
+│   ├── tauri.conf.json          — Window config, bundle targets, security
+│   └── capabilities/default.json — Permission grants (dialog, fs)
+├── package.json
+└── vite.config.ts
 ```
 
 **Key architectural decisions:**
@@ -65,6 +76,8 @@ app/src/
 - EEDP extraction prevents topological hallucinations in AI pipelines
 - Undo/redo via command pattern (50-deep stack)
 - Zero backend — runs entirely in the browser
+- Tauri v2 desktop wrapper (Rust + OS-native WebView) enables offline fieldwork with native file dialogs
+- Tauri bundle sizes: ~3.7 MB .deb, ~11 MB binary, ~80 MB AppImage (bundles system deps)
 
 ## Conventions
 
@@ -78,6 +91,8 @@ app/src/
 | `.agents/AGENTS.md` | Project-specific agent instructions |
 | `TODO.md` | Task tracking |
 | `CHANGELOG.md` | Version history |
+| `app/src-tauri/` | Tauri v2 desktop build (Rust backend, native dialogs) |
+| `app/src/utils/tauriBridge.ts` | Tauri<->browser bridge with native file dialog fallback |
 
 <!-- AI-CONTEXT-END -->
 
