@@ -1,0 +1,21 @@
+{
+  "name": "@stratigraph/sync",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "yjs": "^13.6.0",
+    "y-websocket": "^2.0.0",
+    "y-webrtc": "^10.3.0",
+    "y-indexeddb": "^9.0.0",
+    "lib0": "^0.2.80"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.7"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
+}

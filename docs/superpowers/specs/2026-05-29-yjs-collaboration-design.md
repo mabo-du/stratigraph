@@ -19,7 +19,7 @@ reusable `@stratigraph/sync` package that can be dropped into sister projects
 - Field-level CRDT merge: two people editing different fields of the same context merge cleanly
 - Zero mandatory server infrastructure — WebRTC P2P for on-site field teams
 - Optional WebSocket server for remote teams across different sites
-- End-to-end encryption via y-encryption (embedded in shareable link)
+- End-to-end encryption via Web Crypto API (AES-GCM, key embedded in shareable link)
 - Cross-project: Python apps (Trowel/Fritts) connect via a lightweight Node.js sidecar
 
 ### Non-Goals
@@ -41,7 +41,7 @@ reusable `@stratigraph/sync` package that can be dropped into sister projects
 │  ├── y-websocket provider       Remote team sync               │
 │  ├── y-webrtc provider          Field P2P sync (no server)     │
 │  ├── y-indexeddb provider       Offline persistence            │
-│  ├── y-encryption provider      E2EE with link-embedded key    │
+│  ├── Web Crypto encryption       E2EE with link-embedded key    │
 │  ├── Awareness                  Presence, cursors, selections  │
 │  ├── UndoManager                Built-in CRDT undo/redo        │
 │  └── Room management            Create, join, share, leave     │
@@ -197,8 +197,10 @@ Protocol: **JSON lines over stdio** (one JSON object per line, `\n` delimited).
 - 256-bit symmetric key generated at room creation
 - Key embedded in the shareable link: `stratigraph://join/<roomId>?key=<base64key>`
 - Key is never sent to the WebSocket server
-- `y-encryption` encrypts each Yjs operation before transmission
-- Server (if used) sees only encrypted blobs
+- Web Crypto API (AES-GCM) encrypts the entire Yjs update payload before transmission
+- Each encryption uses a random 96-bit IV prepended to the ciphertext
+- Server (if used) and WebRTC signaling see only encrypted blobs
+- Key is never sent to the server — only embedded in the shareable link
 
 ### 4.3 Future: Tier 3 — Authenticated Rooms
 

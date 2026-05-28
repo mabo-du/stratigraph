@@ -1,0 +1,7 @@
+{
+  "name": "stratigraph-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": ["app", "packages/stratigraph-sync", "packages/stratigraph-sync-react", "packages/sync-sidecar"]
+}
+

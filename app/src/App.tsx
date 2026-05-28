@@ -17,6 +17,16 @@ import { generateMatrixReport } from './models/hoardReport';
 import { RelationshipType } from './models/hmdp';
 import type { Context, Observation, Phase } from './models/hmdp';
 import type { LayoutPosition } from './models/matrixState';
+import { useCollaboration } from './collaboration/useCollaboration';
+
+function generateUserId(): string {
+  let id = localStorage.getItem('stratigraph-user-id');
+  if (!id) {
+    id = `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    localStorage.setItem('stratigraph-user-id', id);
+  }
+  return id;
+}
 
 function App() {
   const { state, dispatch, canUndo, canRedo, undo, redo } = useMatrixStore();
@@ -407,6 +417,16 @@ function App() {
     }
   }, [state]);
 
+  // Collaboration
+  const collab = useCollaboration({
+    userId: generateUserId(),
+    displayName: 'User',
+    projectId: state.meta.projectName,
+    existingRoomId: state.meta.roomId,
+    existingKey: state.meta.roomKey,
+    syncServer: state.meta.syncServer,
+  });
+
   return (
     <div className="app-shell">
       <Toolbar
@@ -448,6 +468,18 @@ function App() {
         onPublicationTemplateChange={setPublicationTemplate}
         heatmapMode={heatmapMode}
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
+        collabConnected={collab.isConnected}
+        collabStatus={collab.status}
+        collabUsers={collab.users.map(u => ({
+          userId: u.userId,
+          displayName: u.displayName,
+          color: u.color,
+          activity: u.activity,
+        }))}
+        collabPending={0}
+        collabShareableLink={collab.shareableLink}
+        onStartSession={collab.startSession}
+        onLeaveSession={collab.leaveSession}
       />
 
       {/* Hidden file input for project load */}
