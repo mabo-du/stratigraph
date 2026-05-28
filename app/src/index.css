@@ -731,6 +731,16 @@ body {
   background: var(--surface-3);
 }
 
+.dropdown-item--active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dropdown-item--active::before {
+  content: '✓ ';
+}
+
 /* ── Modal ───────────────────────────────────────────────────────────────── */
 
 .modal-overlay {

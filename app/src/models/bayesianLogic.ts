@@ -1,6 +1,6 @@
 /**
  * bayesianLogic.ts — Implements the Dye and Buck algorithm for Bayesian prior generation.
- * exports: generateOxCalScript
+ * exports: generateOxCalScript, generateLibbyPayload
  * rules:
  * - Pure function: takes contexts/observations, returns OxCal CQL string.
  * - Must use transitiveReduction to prevent over-constraining the MCMC model.
@@ -108,4 +108,102 @@ export function generateOxCalScript(contexts: Context[], observations: Observati
   script += `};\n`;
 
   return script;
+}
+
+// ── Libby JSON Export ────────────────────────────────────────────────────────
+
+/**
+ * Generate a structured JSON payload for Libby's calibration API.
+ * Includes phases with stratigraphic constraints, radiocarbon events,
+ * and metadata. Designed for direct POST to Libby's /api/calibrate endpoint.
+ */
+export function generateLibbyPayload(
+  projectName: string,
+  contexts: Context[],
+  observations: Observation[],
+  events: Event[] = [],
+): string {
+  // 1. Build Older -> Younger adjacency
+  const adj: Record<string, string[]> = {};
+  contexts.forEach(c => { adj[c.id] = []; });
+
+  observations.forEach(obs => {
+    if (obs.relationshipType === RelationshipType.Above) {
+      if (adj[obs.target]) adj[obs.target].push(obs.source);
+    } else if (obs.relationshipType === RelationshipType.Below) {
+      if (adj[obs.source]) adj[obs.source].push(obs.target);
+    }
+  });
+
+  const reducedAdj = transitiveReduction(adj);
+
+  // 2. Build phase groups with constraints
+  const contextPhases = new Map<string, string>();
+  contexts.forEach(c => {
+    if (c.phase) contextPhases.set(c.id, c.phase);
+  });
+
+  // Collect constraints as older -> younger boundary pairs
+  type Constraint = { older: string; younger: string };
+  const constraints: Constraint[] = [];
+  Object.keys(reducedAdj).forEach(olderId => {
+    const unique = Array.from(new Set(reducedAdj[olderId]));
+    unique.forEach(youngerId => {
+      constraints.push({ older: olderId, younger: youngerId });
+    });
+  });
+
+  // 3. Pack C14 events
+  const c14Dates = events
+    .filter(e => e.rDate && e.type === 'C14')
+    .map(e => {
+      const parts = e.rDate!.split(',').map(s => s.trim());
+      if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+        return {
+          labId: e.id,
+          contextId: e.contextId,
+          name: e.name,
+          bp: Number(parts[0]),
+          sigma: Number(parts[1]),
+        };
+      }
+      // Unstructured date string
+      return { labId: e.id, contextId: e.contextId, name: e.name, raw: e.rDate };
+    });
+
+  const payload = {
+    libby: {
+      version: '1.0',
+      project: projectName || 'Untitled',
+      generatedAt: new Date().toISOString(),
+    },
+    metadata: {
+      totalContexts: contexts.length,
+      totalRelationships: observations.length,
+      totalEvents: events.length,
+      totalConstraints: constraints.length,
+    },
+    contexts: contexts.map(c => ({
+      id: c.id,
+      type: c.type,
+      phase: c.phase || null,
+      period: c.period || null,
+    })),
+    phases: extractPhases(contexts),
+    constraints,
+    dates: c14Dates,
+    oxcal: generateOxCalScript(contexts, observations, events),
+  };
+
+  return JSON.stringify(payload, null, 2);
+}
+
+function extractPhases(contexts: Context[]): { id: string; contexts: string[] }[] {
+  const phaseMap = new Map<string, string[]>();
+  for (const ctx of contexts) {
+    if (!ctx.phase) continue;
+    if (!phaseMap.has(ctx.phase)) phaseMap.set(ctx.phase, []);
+    phaseMap.get(ctx.phase)!.push(ctx.id);
+  }
+  return Array.from(phaseMap.entries()).map(([id, ctxIds]) => ({ id, contexts: ctxIds }));
 }

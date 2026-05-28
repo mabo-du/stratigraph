@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * cytoscapeHelpers.ts — Build Cytoscape element arrays from app state.
- * exports: buildCytoscapeElements, CYTOSCAPE_STYLE
+ * exports: buildCytoscapeElements, generateCytoscapeStyle, PublicationTemplate
  * used_by: MatrixCanvas
  */
 
@@ -9,6 +9,14 @@ import type { Core, ElementDefinition, StylesheetStyle } from 'cytoscape';
 import type { Context, Observation, Phase, Event } from '../models/hmdp';
 import { RelationshipType } from '../models/hmdp';
 import type { LayoutPosition } from '../models/matrixState';
+
+/**
+ * Publication template presets for Harris Matrix styling.
+ * - standard:  Current default (dark/light theme, rounded rects, bezier)
+ * - traditional: Harris Matrix conventions (rect = positive, oval = negative, orthogonal)
+ * - minimal:    Black & white, grayscale-optimized, no phase color fills
+ */
+export type PublicationTemplate = 'standard' | 'traditional' | 'minimal';
 
 export function buildCytoscapeElements(
   contexts: Context[],
@@ -123,11 +131,29 @@ export function collectPositions(cy: Core): Record<string, LayoutPosition> {
   return positions;
 }
 
-export function generateCytoscapeStyle(theme: 'dark'|'light'): StylesheetStyle[] {
+export function generateCytoscapeStyle(
+  theme: 'dark'|'light',
+  publicationTemplate: PublicationTemplate = 'standard',
+): StylesheetStyle[] {
   const isDark = theme === 'dark';
-  const textColor = isDark ? '#ffffff' : '#111111';
-  const edgeColor = isDark ? '#4a6a8a' : '#5a7a9a';
-  const borderColor = isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.2)';
+  const isTraditional = publicationTemplate === 'traditional';
+  const isMinimal = publicationTemplate === 'minimal';
+
+  // Color palette varies by template
+  const textColor = isMinimal ? '#000000' : isDark ? '#ffffff' : '#111111';
+  const edgeColor = isMinimal ? '#333333' : isDark ? '#4a6a8a' : '#5a7a9a';
+  const borderColor = isMinimal ? '#000000' : isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.2)';
+  const nodeBg = isMinimal ? '#ffffff' : 'data(phaseColor)';
+  const nodeBorderWidth = isMinimal ? 1.5 : 2;
+  const defaultShape = isTraditional ? 'round-rectangle' as any : 'round-rectangle' as any;
+
+  // Traditional: serif font for labels, monospace for IDs
+  const nodeFontFamily = isTraditional
+    ? '"Noto Serif Display", "DM Serif Display", Georgia, serif'
+    : '"JetBrains Mono", "Fira Code", monospace';
+  const nodeFontSize = isTraditional ? 11 : 13;
+  const edgeCurveStyle = isTraditional ? 'haystack' as any : 'bezier' as any;
+  // Haystack edges are straight lines — cleaner for publication
 
   return [
     // ── Compound Nodes (Phases) ─────────────────────────────────────────────
@@ -156,45 +182,48 @@ export function generateCytoscapeStyle(theme: 'dark'|'light'): StylesheetStyle[]
     {
       selector: 'node',
       style: {
-        'shape': 'round-rectangle' as any,
-        'background-color': 'data(phaseColor)',
+        'shape': defaultShape,
+        'background-color': nodeBg,
         'label': 'data(label)',
-        'font-family': '"JetBrains Mono", "Fira Code", monospace',
-        'font-size': 13,
-        'font-weight': 600 as any,
+        'font-family': nodeFontFamily,
+        'font-size': nodeFontSize,
+        'font-weight': isMinimal ? 400 : 600 as any,
         'text-valign': 'center',
         'text-halign': 'center',
         'color': textColor,
         'text-outline-color': 'data(phaseColor)',
-        'text-outline-width': isDark ? 1 : 0,
-        'width': 80,
-        'height': 44,
-        'border-width': 2,
+        'text-outline-width': isDark && !isMinimal ? 1 : 0,
+        'width': isTraditional ? 70 : 80,
+        'height': isTraditional ? 38 : 44,
+        'border-width': nodeBorderWidth,
         'border-color': borderColor,
         'border-opacity': 1,
       },
     },
-    // Negative contexts (cuts/pits) — rectangular shape
+    // Negative contexts (cuts/pits) — oval in traditional, rectangle in standard
     {
       selector: 'node[type="Negative"]',
       style: {
-        'shape': 'rectangle',
-        'border-style': 'dashed',
+        'shape': isTraditional ? 'ellipse' as any : 'rectangle' as any,
+        'border-style': isTraditional ? 'solid' : 'dashed',
+        'border-color': isTraditional ? '#000000' : borderColor,
+        'background-color': isTraditional ? 'transparent' : nodeBg,
       },
     },
-    // Unknown type
+    // Unknown type — ellipse in traditional, diamond in standard
     {
       selector: 'node[type="Unknown"]',
       style: {
-        'shape': 'diamond' as any,
+        'shape': isTraditional ? 'ellipse' as any : 'diamond' as any,
+        'background-color': isMinimal ? '#f5f5f5' : nodeBg,
       },
     },
     // Selected node
     {
       selector: 'node:selected',
       style: {
-        'border-color': '#c8952a',
-        'border-width': 3,
+        'border-color': isMinimal ? '#000000' : '#c8952a',
+        'border-width': isMinimal ? 2.5 : 3,
         'border-opacity': 1,
       },
     },
@@ -210,13 +239,13 @@ export function generateCytoscapeStyle(theme: 'dark'|'light'): StylesheetStyle[]
     {
       selector: 'edge',
       style: {
-        'width': 2,
+        'width': isMinimal ? 1 : 2,
         'line-color': edgeColor,
         'target-arrow-color': edgeColor,
-        'target-arrow-shape': 'triangle',
-        'arrow-scale': 1.2,
-        'curve-style': 'bezier',
-        'opacity': 0.85,
+        'target-arrow-shape': isTraditional ? 'triangle-backcurve' as any : 'triangle',
+        'arrow-scale': isTraditional ? 0.8 : 1.2,
+        'curve-style': edgeCurveStyle,
+        'opacity': isMinimal ? 0.7 : 0.85,
       },
     },
     // Equals edges — dashed, no arrow
@@ -224,17 +253,17 @@ export function generateCytoscapeStyle(theme: 'dark'|'light'): StylesheetStyle[]
       selector: 'edge[edgeType="equals"]',
       style: {
         'line-style': 'dashed',
-        'line-color': '#c8952a',
+        'line-color': isMinimal ? '#666666' : '#c8952a',
         'target-arrow-shape': 'none',
         'mid-target-arrow-shape': 'none',
       },
     },
-    // Contemporary edges — dotted, double-headed
+    // Contemporary edges — dotted, no arrow
     {
       selector: 'edge[edgeType="contemporary"]',
       style: {
         'line-style': 'dotted',
-        'line-color': '#4a9e6f',
+        'line-color': isMinimal ? '#888888' : '#4a9e6f',
         'target-arrow-shape': 'none',
       },
     },

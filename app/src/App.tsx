@@ -6,10 +6,12 @@ import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { ImportEngine } from './components/ImportEngine';
 import { SearchOverlay } from './components/SearchOverlay';
-import { saveProject, loadProject } from './utils/fileUtils';
+import { saveProject, loadProject, buildGeoJSON, exportGeoJSON } from './utils/fileUtils';
+import type { PublicationTemplate } from './utils/cytoscapeHelpers';
 import { buildAdjacencyList, findCyclePath, wouldCreateCycle, transitiveReduction } from './models/graphLogic';
-import { generateOxCalScript } from './models/bayesianLogic';
+import { generateOxCalScript, generateLibbyPayload } from './models/bayesianLogic';
 import { generateHoardMarkdown, generateHoardJson } from './models/hoardExport';
+import { generateMatrixReport } from './models/hoardReport';
 import { RelationshipType } from './models/hmdp';
 import type { Context, Observation, Phase } from './models/hmdp';
 import type { LayoutPosition } from './models/matrixState';
@@ -22,6 +24,7 @@ function App() {
   const [showPhaseGroups, setShowPhaseGroups] = useState(true);
   const [theme, setTheme] = useState<'dark'|'light'>('dark');
   const [publicationMode, setPublicationMode] = useState(false);
+  const [publicationTemplate, setPublicationTemplate] = useState<PublicationTemplate>('standard');
   const [heatmapMode, setHeatmapMode] = useState(false);
 
   // Sync theme to document body
@@ -202,6 +205,25 @@ function App() {
   }, [dispatch, state.observations]);
 
   // ── Bayesian Export ─────────────────────────────────────────────────────
+  const handleExportLibbyJson = useCallback(() => {
+    try {
+      const payload = generateLibbyPayload(
+        state.meta.projectName, state.contexts, state.observations, state.events,
+      );
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_libby.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate Libby payload: ${err.message}`);
+    }
+  }, [state]);
+
   const handleExportOxCal = useCallback(() => {
     try {
       const script = generateOxCalScript(state.contexts, state.observations, state.events);
@@ -253,6 +275,65 @@ function App() {
     }
   }, [state.contexts, state.observations, state.events, state.meta.projectName]);
 
+  const handleExportReport = useCallback(() => {
+    try {
+      const report = generateMatrixReport(
+        state.meta.projectName, state.contexts, state.observations, state.phases, state.events,
+      );
+      const blob = new Blob([report.markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate report: ${err.message}`);
+    }
+  }, [state]);
+
+  const handleExportReportJson = useCallback(() => {
+    try {
+      const report = generateMatrixReport(
+        state.meta.projectName, state.contexts, state.observations, state.phases, state.events,
+      );
+      const blob = new Blob([report.json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(state.meta.projectName || 'matrix').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Failed to generate report JSON: ${err.message}`);
+    }
+  }, [state]);
+
+  const handleExportGeoJSON = useCallback(() => {
+    try {
+      const result = buildGeoJSON(state);
+      if (result.featureCount === 0) {
+        if (result.totalContexts === 0) {
+          alert('No contexts in project. Add contexts first, then try again.');
+        } else {
+          alert(
+            `No contexts with spatial coordinates found.\n\n` +
+            `${result.totalContexts} contexts exist but none have spatial centroids.\n` +
+            `Import contexts with centroid X/Y columns via CSV import, then try again.`
+          );
+        }
+        return;
+      }
+      exportGeoJSON(state);
+    } catch (err: any) {
+      alert(`Failed to export GeoJSON: ${err.message}`);
+    }
+  }, [state]);
+
   return (
     <div className="app-shell">
       <Toolbar
@@ -271,8 +352,12 @@ function App() {
         onExportSVG={() => canvasRef.current?.exportSVG()}
         onExportPDF={() => canvasRef.current?.exportPDF()}
         onExportOxCal={handleExportOxCal}
+        onExportLibbyJson={handleExportLibbyJson}
         onExportHoardText={handleExportHoardText}
         onExportHoardJson={handleExportHoardJson}
+        onExportReport={handleExportReport}
+        onExportReportJson={handleExportReportJson}
+        onExportGeoJSON={handleExportGeoJSON}
         contextCount={state.contexts.length}
         showPhaseGroups={showPhaseGroups}
         onTogglePhaseGroups={() => setShowPhaseGroups(prev => !prev)}
@@ -280,6 +365,8 @@ function App() {
         onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
         publicationMode={publicationMode}
         onTogglePublicationMode={() => setPublicationMode(prev => !prev)}
+        publicationTemplate={publicationTemplate}
+        onPublicationTemplateChange={setPublicationTemplate}
         heatmapMode={heatmapMode}
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
       />
@@ -328,6 +415,7 @@ function App() {
           dataVersion={state.dataVersion}
           theme={theme}
           publicationMode={publicationMode}
+          publicationTemplate={publicationTemplate}
           heatmapMode={heatmapMode}
           onNodeSelect={id => dispatch({ type: 'SELECT_CONTEXT', id })}
           onPositionsChange={handlePositionsChange}

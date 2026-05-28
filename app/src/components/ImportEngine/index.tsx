@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload } from 'lucide-react';
+import { X, Archive } from 'lucide-react';
 import { Dropzone } from './Dropzone';
 import { ColumnMapper } from './ColumnMapper';
 import { parseCsvFile, applyContextMapping, applyObservationMapping, applyEventMapping } from '../../utils/csvParser';
 import { importHoardData } from '../../models/hoardImporter';
+import { parseLstFile } from '../../utils/lstParser';
+import { detectFieldSystem, suggestMappings } from '../../utils/smartImport';
 import type { HoardContextSheet } from '../../models/hoardImporter';
 import type { ContextMapping, ObservationMapping, EventMapping } from '../../utils/csvParser';
 import type { Context, Observation, Event } from '../../models/hmdp';
@@ -14,7 +16,7 @@ interface ImportEngineProps {
 }
 
 type ImportStep = 'upload' | 'map-contexts' | 'map-observations' | 'map-events' | 'processing';
-type ImportMode = 'csv' | 'hoard';
+type ImportMode = 'csv' | 'hoard' | 'lst';
 
 export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClose }) => {
   const [mode, setMode] = useState<ImportMode>('csv');
@@ -32,6 +34,11 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
   const [observations, setObservations] = useState<Observation[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
 
+  // ── Smart import state ────────────────────────────────────────────────────
+  const [detectedSystem, setDetectedSystem] = useState<string | null>(null);
+  const [contextSuggestions, setContextSuggestions] = useState<any>(null);
+  const [observationSuggestions, setObservationSuggestions] = useState<any>(null);
+
   // ── HOARD state ────────────────────────────────────────────────────────────
   const [hoardFiles, setHoardFiles] = useState<{ name: string; status: 'loaded' | 'error'; errors?: string }[]>([]);
   const [hoardResult, setHoardResult] = useState<{ contexts: Context[]; observations: Observation[] } | null>(null);
@@ -46,6 +53,13 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
       const result = await parseCsvFile(file);
       setContextHeaders(result.headers);
       setContextRows(result.rows);
+
+      // Smart import: detect system and suggest mappings
+      const system = detectFieldSystem(result.headers);
+      setDetectedSystem(system?.name ?? null);
+      const suggestions = suggestMappings(result.headers);
+      setContextSuggestions(suggestions);
+
       setStep('map-contexts');
     } catch (err: any) {
       setError(`Failed to parse Contexts CSV: ${err.message}`);
@@ -58,6 +72,13 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
       const result = await parseCsvFile(file);
       setObservationHeaders(result.headers);
       setObservationRows(result.rows);
+
+      // Smart import: detect system and suggest mappings
+      const system = detectFieldSystem(result.headers);
+      setDetectedSystem(system?.name ?? null);
+      const suggestions = suggestMappings(result.headers);
+      setObservationSuggestions(suggestions);
+
       setStep('map-observations');
     } catch (err: any) {
       setError(`Failed to parse Observations CSV: ${err.message}`);
@@ -163,17 +184,49 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
 
   // ── Shared helpers ─────────────────────────────────────────────────────────
 
+  // ── LST handlers ────────────────────────────────────────────────────────────
+
+  const handleLstFileLoaded = async (file: File) => {
+    try {
+      setError(null);
+      const text = await file.text();
+      const result = parseLstFile(text, file.name);
+
+      setLstFileName(file.name);
+      setLstResult({
+        contexts: result.contexts,
+        observations: result.observations,
+        warnings: result.warnings,
+        metadata: result.metadata,
+      });
+    } catch (err: any) {
+      setError(`Failed to parse .LST file: ${err.message}`);
+    }
+  };
+
+  const submitLstData = () => {
+    if (!lstResult) return;
+    setStep('processing');
+    onDataLoaded(lstResult.contexts, lstResult.observations, []);
+  };
+
   const switchMode = (newMode: ImportMode) => {
     setMode(newMode);
     setStep('upload');
     setError(null);
+    setLstResult(null);
+    setLstFileName('');
   };
+
+  const [lstResult, setLstResult] = useState<{ contexts: Context[]; observations: Observation[]; warnings: string[]; metadata: Record<string, string> } | null>(null);
+  const [lstFileName, setLstFileName] = useState('');
 
   const stepLabel =
     step === 'map-contexts' ? 'Map Context Columns'
     : step === 'map-observations' ? 'Map Relationship Columns'
     : step === 'map-events' ? 'Map Event Columns'
     : mode === 'hoard' ? 'Import HOARD Phase 1 Output'
+    : mode === 'lst' ? 'Import Legacy .LST File'
     : 'Import Stratigraphic Data';
 
   return (
@@ -247,7 +300,25 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
             transition: 'color 0.15s, border-color 0.15s',
           }}
         >
-          HOARD JSON Import
+          HOARD JSON
+        </button>
+        <button
+          onClick={() => switchMode('lst')}
+          style={{
+            padding: '0.5rem 1rem',
+            border: 'none',
+            borderBottom: mode === 'lst' ? '2px solid var(--accent)' : '2px solid transparent',
+            background: 'transparent',
+            color: mode === 'lst' ? 'var(--text)' : 'var(--text-2)',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontFamily: 'var(--font-body)',
+            fontWeight: mode === 'lst' ? 600 : 400,
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+        >
+          <Archive size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+          Legacy .LST
         </button>
       </div>
 
@@ -555,6 +626,110 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
         </div>
       )}
 
+      {/* ── Legacy .LST Import Step ───────────────────────────────────────── */}
+      {mode === 'lst' && step === 'upload' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {!lstResult ? (
+            <Dropzone onFileLoaded={handleLstFileLoaded} title="BASP / ArchEd .LST file" accept=".lst,.txt" />
+          ) : (
+            <>
+              {/* Summary */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+                padding: '1rem',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <Archive size={18} style={{ color: 'var(--accent)' }} />
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{lstFileName}</span>
+                </div>
+
+                {Object.keys(lstResult.metadata).length > 0 && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-2)', lineHeight: 1.7 }}>
+                    {Object.entries(lstResult.metadata).map(([k, v]) => (
+                      <div key={k}><strong>{k}:</strong> {v}</div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-2)' }}>Contexts</span>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text)' }}>
+                      {lstResult.contexts.length}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-2)' }}>Relationships</span>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text)' }}>
+                      {lstResult.observations.length}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-2)' }}>Format</span>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text)' }}>
+                      {lstResult.observations.length > 0 ? 'BASP / ArchEd' : 'Metadata only'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warnings */}
+              {lstResult.warnings.length > 0 && (
+                <div style={{
+                  background: 'rgba(212, 139, 69, 0.12)',
+                  border: '1px solid rgba(212, 139, 69, 0.4)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.75rem',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-2)',
+                }}>
+                  <strong style={{ color: '#d48b45' }}>Import notices:</strong>
+                  <ul style={{ margin: '0.25rem 0 0', paddingLeft: '1.25rem' }}>
+                    {lstResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              {/* Re-upload button */}
+              <button
+                onClick={() => { setLstResult(null); setLstFileName(''); }}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-2)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-2)',
+                  padding: '6px 14px',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-body)',
+                  alignSelf: 'flex-start',
+                }}
+              >
+                Choose a different file
+              </button>
+
+              <button
+                onClick={submitLstData}
+                className="btn btn--primary"
+                style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}
+              >
+                Generate Harris Matrix from {lstResult.contexts.length} contexts
+              </button>
+            </>
+          )}
+
+          {/* Tip */}
+          <div style={{ padding: '0.75rem 1rem', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: '0.78rem', color: 'var(--text-2)' }}>
+            <strong style={{ color: 'var(--text)' }}>Tip:</strong> The .LST (List) format was used by BASP (Bonn Archaeological Software Package) and ArchEd. Select a .lst or .txt file exported from these programs. Supports classic <code style={{ background: 'var(--surface-3)', padding: '1px 4px', borderRadius: 3 }}>*HEADING</code> / <code style={{ background: 'var(--surface-3)', padding: '1px 4px', borderRadius: 3 }}>*CONTEXT DEFINITIONS</code> / <code style={{ background: 'var(--surface-3)', padding: '1px 4px', borderRadius: 3 }}>*RELATIONS</code> format, ArchEd JSON extended format, and Stratify-compatible <code style={{ background: 'var(--surface-3)', padding: '1px 4px', borderRadius: 3 }}>*ABOVE</code> / <code style={{ background: 'var(--surface-3)', padding: '1px 4px', borderRadius: 3 }}>*EQUAL</code> sections. Stub contexts are created for referenced IDs not defined in the file.
+          </div>
+        </div>
+      )}
+
       {/* Step: Map contexts */}
       {step === 'map-contexts' && (
         <ColumnMapper
@@ -562,6 +737,8 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
           headers={contextHeaders}
           onMappingComplete={handleContextMappingComplete}
           onCancel={() => setStep('upload')}
+          initialMapping={contextSuggestions}
+          detectedSystem={detectedSystem ?? undefined}
         />
       )}
 
@@ -572,6 +749,8 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
           headers={observationHeaders}
           onMappingComplete={handleObservationMappingComplete}
           onCancel={() => setStep('upload')}
+          initialMapping={observationSuggestions}
+          detectedSystem={detectedSystem ?? undefined}
         />
       )}
 
