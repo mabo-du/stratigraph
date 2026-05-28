@@ -230,6 +230,54 @@ function extractHpdRanges(
   return ranges;
 }
 
+// ── Stratigraphic Agreement Index ───────────────────────────────────────────
+
+/**
+ * Compute the agreement index (Acomb-like) for each event.
+ *
+ * The agreement index measures overlap between the unconstrained PDF
+ * and the constrained PDF. Values > 60% are considered acceptable
+ * (analogous to OxCal's Acomb). Lower values suggest the C14 date
+ * conflicts with its stratigraphic position.
+ *
+ * @param constrainedResult - The constrained calibration result
+ * @returns Agreement index as a percentage (0-100)
+ */
+export function computeAgreementIndex(result: ConstrainedResult): number {
+  if (!result.constrained) return 100;
+
+  const uc = result.unconstrained;
+  const c = result;
+
+  // Find the overlapping calendar range
+  const ucMin = Math.min(...uc.density.map(p => p.calBP));
+  const ucMax = Math.max(...uc.density.map(p => p.calBP));
+  const cMin = Math.min(...c.density.map(p => p.calBP));
+  const cMax = Math.max(...c.density.map(p => p.calBP));
+
+  const minCal = Math.max(ucMin, cMin);
+  const maxCal = Math.min(ucMax, cMax);
+
+  if (minCal >= maxCal) return 0;
+
+  // Build overlapping PDFs and compute agreement
+  const cMap = new Map(c.density.map(p => [p.calBP, p.prob]));
+
+  let overlap = 0;
+  let ucTotal = 0;
+
+  for (const p of uc.density) {
+    ucTotal += p.prob;
+    if (p.calBP >= minCal && p.calBP <= maxCal) {
+      const cProb = cMap.get(p.calBP) || 0;
+      overlap += Math.min(p.prob, cProb);
+    }
+  }
+
+  if (ucTotal === 0) return 100;
+  return Math.round((overlap / ucTotal) * 100);
+}
+
 // ── Sequence calibration (Dye & Buck stratigraphic constraints) ────────────
 
 /**

@@ -112,6 +112,22 @@ const FIELD_SYSTEMS: SystemProfile[] = [
     },
   },
   {
+    name: 'Trowel',
+    code: 'trowel',
+    priority: 7,
+    patterns: {
+      id: ['context_number', 'context_no', 'id'],
+      type: ['context_type', 'type', 'feature_type'],
+      description: ['description', 'interpretation'],
+      source: ['cut_by', 'cuts'],
+      target: ['fills', 'filled_by'],
+      relationship: [],
+      centroidX: ['easting', 'x', 'eastings'],
+      centroidY: ['northing', 'y', 'northings'],
+      distinctive: ['context_number', 'cut_by', 'filled_by'],
+    },
+  },
+  {
     name: 'Generic CSV',
     code: 'generic',
     priority: 1,

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FlaskConical, ChevronDown, ChevronRight } from 'lucide-react';
-import { loadCurve, calibrateDate, calibrateSequence } from '../../utils/calibration';
+import { FlaskConical, ChevronDown, ChevronRight, Download } from 'lucide-react';
+import { loadCurve, calibrateDate, calibrateSequence, computeAgreementIndex } from '../../utils/calibration';
 import type { CalibratedResult, CurvePoint, ConstrainedResult } from '../../utils/calibration';
+import { generateCalibrationFigureSvg } from '../../utils/calibrationFigure';
 import type { Event, Observation } from '../../models/hmdp';
 import { RelationshipType } from '../../models/hmdp';
 
@@ -168,11 +169,18 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events, obse
                   );
                 }
 
+                const rDateParts = (event.rDate || '').split(',').map(s => s.trim());
+                const bp = parseInt(rDateParts[0]) || 0;
+                const sig = parseInt(rDateParts[1]) || 0;
+
                 return (
                   <CalibratedDateCard
                     key={event.id}
                     event={event}
                     result={result}
+                    curve={curve}
+                    c14BP={bp}
+                    sigma={sig}
                     showConstrained={showConstrained}
                     formatCalendar={formatCalendar}
                     formatRange={formatRange}
@@ -192,12 +200,15 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events, obse
 interface CardProps {
   event: Event;
   result: CalibratedResult | ConstrainedResult;
+  curve: CurvePoint[] | null;
+  c14BP: number;
+  sigma: number;
   showConstrained: boolean;
   formatCalendar: (bp: number) => string;
   formatRange: (r: { from: number; to: number }) => string;
 }
 
-const CalibratedDateCard: React.FC<CardProps> = ({ event, result, showConstrained, formatCalendar, formatRange }) => {
+const CalibratedDateCard: React.FC<CardProps> = ({ event, result, curve, c14BP, sigma, showConstrained, formatCalendar, formatRange }) => {
   const [showPlot, setShowPlot] = useState(false);
 
   // Use constrained or unconstrained density for plotting
@@ -226,22 +237,51 @@ const CalibratedDateCard: React.FC<CardProps> = ({ event, result, showConstraine
             {event.rDate} BP · Median {formatCalendar(result.median)}
           </div>
         </div>
-        <button
-          className="icon-btn"
-          onClick={() => setShowPlot(v => !v)}
-          title="Toggle calibration plot"
-          style={{ fontSize: '0.7rem' }}
-        >
-          {showPlot ? '▲' : '▼'}
-        </button>
+        <div style={{ display: 'flex', gap: 2 }}>
+          {/* Export SVG button */}
+          {curve && (
+            <button
+              className="icon-btn"
+              onClick={() => {
+                const svg = generateCalibrationFigureSvg(
+                  event.name, event.id, c14BP, sigma, curve, activeResult,
+                );
+                const blob = new Blob([svg], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${event.id.replace(/[^a-z0-9]/gi, '_')}_calibration.svg`;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+              title="Export calibration figure (SVG)"
+            >
+              <Download size={11} />
+            </button>
+          )}
+          <button
+            className="icon-btn"
+            onClick={() => setShowPlot(v => !v)}
+            title="Toggle calibration plot"
+            style={{ fontSize: '0.7rem' }}
+          >
+            {showPlot ? '▲' : '▼'}
+          </button>
+        </div>
       </div>
 
-      {/* Constrained badge */}
-      {constrainedInfo?.constrained && (
-        <div style={{ fontSize: '0.68rem', color: '#5b9bd5', marginTop: 2, fontWeight: 500 }}>
-          ⚙ Constrained by {constrainedInfo.constrainedByOlder.length} older + {constrainedInfo.constrainedByYounger.length} younger event(s)
-        </div>
-      )}
+      {/* Constrained badge with agreement index */}
+      {constrainedInfo?.constrained && (() => {
+        const agreement = computeAgreementIndex(constrainedInfo);
+        const color = agreement >= 60 ? 'var(--success)' : agreement >= 30 ? '#d48b45' : 'var(--error)';
+        return (
+          <div style={{ fontSize: '0.68rem', color: '#5b9bd5', marginTop: 2, fontWeight: 500 }}>
+            ⚙ Constrained — Agreement: <span style={{ color }}>{agreement}%</span>
+            {' '}({constrainedInfo.constrainedByOlder.length} older + {constrainedInfo.constrainedByYounger.length} younger)
+          </div>
+        );
+      })()}
 
       {/* 2σ range */}
       <div style={{ marginTop: 4, color: 'var(--text-2)', lineHeight: 1.5 }}>
