@@ -25,21 +25,28 @@ export function buildCytoscapeElements(
   positions: Record<string, LayoutPosition>,
   showPhaseGroups: boolean = false,
   heatmapMode: boolean = false,
-  events: Event[] = []
+  events: Event[] = [],
+  collapsedPhases: Set<string> = new Set(),
 ): ElementDefinition[] {
   const phaseMap = new Map(phases.map(p => [p.id, p]));
   const elements: ElementDefinition[] = [];
+
+  // Build a set of collapsed phase IDs for fast lookup
+  const isCollapsed = (phaseId: string) => showPhaseGroups && collapsedPhases.has(phaseId);
 
   // If grouping is enabled, create Phase parent nodes first
   if (showPhaseGroups) {
     const activePhases = new Set(contexts.filter(c => c.phase).map(c => c.phase!));
     for (const phase of phases) {
       if (activePhases.has(phase.id)) {
+        const count = contexts.filter(c => c.phase === phase.id).length;
+        const collapsed = collapsedPhases.has(phase.id);
         elements.push({
           data: {
             id: phase.id,
-            label: phase.name,
+            label: collapsed ? `${phase.name} (${count})` : phase.name,
             phaseColor: phase.color,
+            collapsedCount: collapsed ? count : undefined,
           },
         });
       }
@@ -58,6 +65,9 @@ export function buildCytoscapeElements(
 
   for (const ctx of contexts) {
     const phase = ctx.phase ? phaseMap.get(ctx.phase) : undefined;
+    // Skip individual nodes inside collapsed phases
+    if (phase && isCollapsed(phase.id)) continue;
+
     const parent = showPhaseGroups && phase ? phase.id : undefined;
     const pos = positions[ctx.id];
 
@@ -92,9 +102,16 @@ export function buildCytoscapeElements(
     });
   }
 
+  // Build a lookup for context → phase
+  const ctxPhaseMap = new Map(contexts.filter(c => c.phase).map(c => [c.id, c.phase!]));
+
   // Edges — only use Above relationships for the directed graph
   // Equals/Contemporary are rendered differently
   for (const obs of observations) {
+    // Skip edges where either endpoint is in a collapsed phase
+    const srcPhase = ctxPhaseMap.get(obs.source);
+    const tgtPhase = ctxPhaseMap.get(obs.target);
+    if ((srcPhase && isCollapsed(srcPhase)) || (tgtPhase && isCollapsed(tgtPhase))) continue;
     // Normalise direction: source is always the "above" (earlier in time = higher in matrix)
     let source = obs.source;
     let target = obs.target;
@@ -152,28 +169,28 @@ export function generateCytoscapeStyle(
     ? '"Noto Serif Display", "DM Serif Display", Georgia, serif'
     : '"JetBrains Mono", "Fira Code", monospace';
   const nodeFontSize = isTraditional ? 11 : 13;
-  const edgeCurveStyle = isTraditional ? 'haystack' as any : 'bezier' as any;
-  // Haystack edges are straight lines — cleaner for publication
+  const edgeCurveStyle = isTraditional ? 'straight' as any : 'bezier' as any;
+  // Straight edges for publication; bezier for standard interactive use
 
   return [
     // ── Compound Nodes (Phases) ─────────────────────────────────────────────
     {
       selector: ':parent',
       style: {
-        'background-color': 'data(phaseColor)' as any,
-        'background-opacity': 0.08,
-        'border-width': 2,
+        'background-color': isMinimal ? '#f5f5f5' as any : 'data(phaseColor)' as any,
+        'background-opacity': isMinimal ? 0.5 : (isTraditional ? 0.04 : 0.08),
+        'border-width': isTraditional ? 1 : 2,
         'border-color': 'data(phaseColor)' as any,
-        'border-style': 'dashed',
-        'border-opacity': 0.8,
+        'border-style': isTraditional ? 'solid' : 'dashed',
+        'border-opacity': isTraditional ? 0.5 : 0.8,
         'label': 'data(label)',
-        'font-family': '"DM Sans", system-ui, sans-serif',
-        'font-size': 16,
+        'font-family': isTraditional ? '"Noto Serif Display", Georgia, serif' : '"DM Sans", system-ui, sans-serif',
+        'font-size': isTraditional ? 14 : 16,
         'font-weight': 600 as any,
         'text-valign': 'top',
         'text-halign': 'center',
         'color': 'data(phaseColor)' as any,
-        'padding': '15px' as any,
+        'padding': '12px' as any,
         'text-margin-y': -8 as any,
         'shape': 'roundrectangle' as any,
       }
@@ -246,6 +263,8 @@ export function generateCytoscapeStyle(
         'arrow-scale': isTraditional ? 0.8 : 1.2,
         'curve-style': edgeCurveStyle,
         'opacity': isMinimal ? 0.7 : 0.85,
+        // For traditional: add a small gap at the target for cleaner appearance
+        'target-distance-from-node': isTraditional ? 2 : 0,
       },
     },
     // Equals edges — dashed, no arrow

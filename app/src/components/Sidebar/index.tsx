@@ -94,7 +94,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <RelationshipSuggestions
                   contexts={contexts}
                   observations={observations}
-                  phases={phases}
                   onAddObservation={onAddObservation}
                 />
               )}
