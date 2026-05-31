@@ -1,12 +1,13 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Room, createRoom } from '@stratigraph/sync';
-import type { RoomConfig, StatusEvent, SyncStatus, AwarenessState } from '@stratigraph/sync';
+import { Room } from '@stratigraph/sync';
+import type { StatusEvent, AwarenessState } from '@stratigraph/sync';
 
 interface SyncContextValue {
   room: Room | null;
   status: StatusEvent;
   connected: boolean;
+  isLoaded: boolean;
   users: AwarenessState[];
 }
 
@@ -14,37 +15,30 @@ const SyncContext = createContext<SyncContextValue>({
   room: null,
   status: { status: 'disconnected', pending: 0 },
   connected: false,
+  isLoaded: false,
   users: [],
 });
 
 interface SyncProviderProps {
-  config: RoomConfig;
+  room: Room | null;
   children: ReactNode;
 }
 
-export function SyncProvider({ config, children }: SyncProviderProps) {
-  const [status, setStatus] = useState<StatusEvent>({ status: 'connecting', pending: 0 });
+export function SyncProvider({ room, children }: SyncProviderProps) {
+  const [status, setStatus] = useState<StatusEvent>({ status: 'disconnected', pending: 0 });
   const [users, setUsers] = useState<AwarenessState[]>([]);
 
-  const room = useMemo(() => createRoom(config), [
-    config.roomId,
-    config.userId,
-    config.displayName,
-  ]);
-
   useEffect(() => {
+    if (!room) return;
     const unsubStatus = room.onStatus(setStatus);
     const unsubAwareness = room.awareness.onChange(setUsers);
+    
+    // Also init status immediately in case it changed before effect ran
+    setStatus(room.status);
+    
     return () => {
       unsubStatus();
       unsubAwareness();
-    };
-  }, [room]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      room.destroy();
     };
   }, [room]);
 
@@ -52,6 +46,7 @@ export function SyncProvider({ config, children }: SyncProviderProps) {
     room,
     status,
     connected: status.status === 'connected' || status.status === 'synced',
+    isLoaded: room ? room.isLoaded : false,
     users,
   }), [room, status, users]);
 

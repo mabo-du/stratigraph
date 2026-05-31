@@ -49,7 +49,18 @@
       }
     },
     "macOS": {
-      "minimumSystemVersion": "11.0"
+      "minimumSystemVersion": "11.0",
+      "entitlements": "Entitlements.plist",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "StratiGraph uses the local network to discover and synchronize project data with other devices in the field.",
+        "NSBonjourServices": ["_stratigraph._tcp"]
+      }
+    },
+    "windows": {
+      "wix": {
+        "componentGroupRefs": ["FirewallException"],
+        "fragmentPaths": ["wix/firewall.wxs"]
+      }
     }
   }
 }

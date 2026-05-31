@@ -24,11 +24,13 @@ export const ContextType = {
 
 export type ContextType = typeof ContextType[keyof typeof ContextType];
 
+import type { GeometryObject } from 'geojson';
+
 export interface SpatialMetadata {
   crs?: string;         // e.g. "EPSG:4326"
   centroid?: { x: number; y: number; z?: number };
   boundingBox?: { minX: number; minY: number; minZ?: number; maxX: number; maxY: number; maxZ?: number };
-  geoJSON?: any;        // e.g. FeatureCollection
+  geoJSON?: GeometryObject;
 }
 
 export interface Context {
@@ -38,7 +40,8 @@ export interface Context {
   period?: string;
   phase?: string;      // Phase ID reference
   spatial?: SpatialMetadata;
-  photoUrl?: string;   // Optional image URL for node display
+  photoUrl?: string;   // Optional legacy image URL for node display
+  mediaRefs?: string[]; // Array of unique identifiers or URIs to decoupled media assets
 }
 
 export interface Observation {
@@ -65,6 +68,7 @@ export interface Event {
 export interface DataPackage {
   name: string;
   created: string;
+  provenance?: string; // Tracks the source of the data, e.g., 'ArchEd .LST import'
   contexts: Context[];
   observations: Observation[];
   phases: Phase[];

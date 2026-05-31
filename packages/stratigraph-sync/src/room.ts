@@ -1,4 +1,4 @@
-import { Doc } from 'yjs';
+import { Doc, UndoManager } from 'yjs';
 import type { RoomConfig, SyncProvider, SyncStatus, StatusEvent, RemoteChange, RoomMaps } from './types';
 import { createPersistence } from './persistence';
 import { createAwareness, type AwarenessManager } from './awareness';
@@ -7,7 +7,9 @@ export class Room {
   readonly doc: Doc;
   readonly maps: RoomMaps;
   readonly awareness: AwarenessManager;
+  readonly undoManager: UndoManager;
   readonly config: { roomId: string; userId: string; displayName: string };
+  isLoaded: boolean = false;
   private _providers: Array<{ destroy(): void }> = [];
   private _status: { status: SyncStatus; pending: number } = {
     status: 'disconnected',
@@ -39,8 +41,19 @@ export class Room {
     this.maps.room.set('roomId', config.roomId);
 
     // Setup y-indexeddb persistence
-    const persistCleanup = createPersistence(this.doc, config.persistence !== false);
+    const persistCleanup = createPersistence(this.doc, config.persistence !== false, () => {
+      this.isLoaded = true;
+      this._emitStatus(); // Let listeners know we loaded
+    });
     this._providers.push({ destroy: persistCleanup });
+
+    // Setup UndoManager (track only specific maps, exclude positions and meta)
+    this.undoManager = new UndoManager([
+      this.maps.contexts,
+      this.maps.observations,
+      this.maps.phases,
+      this.maps.events
+    ]);
 
     // Encryption key stored for shareable link generation
     // Actual payload encryption handled by application layer via Web Crypto API

@@ -20,7 +20,7 @@
 
 StratiGraph is a premium, entirely browser-based tool designed for archaeologists to visually construct, validate, and export stratigraphic sequences (Harris Matrices) — the directed acyclic graphs used in every stratigraphic excavation. Unlike legacy software, StratiGraph seamlessly integrates modern data visualization with Bayesian geochronology, GIS interoperability, and Artificial Intelligence readiness.
 
-**Current status:** v1 MVP substantially complete — core DAG engine, HOARD AI import/export, Libby/OxCal Bayesian export, CSV import with column mapping, full UI with dark/light mode, undo/redo, and exports to PNG/SVG/PDF. See [AGENTS.md](AGENTS.md) for architecture and quick start.
+**Current status:** v2 features currently in development — Real-time WebRTC CRDT collaboration, Offline Media Management (SQLite), GeoJSON/ArchesDB export, core DAG engine, HOARD AI import/export, Libby/OxCal Bayesian export, CSV import with column mapping, full UI with dark/light mode, and exports to PNG/SVG/PDF. See [AGENTS.md](AGENTS.md) for architecture and quick start.
 
 ## 🚀 Key Features
 
@@ -35,6 +35,7 @@ StratiGraph is the central hub of a comprehensive open-source digital heritage w
 | **HOARD** | `~/Projects/HOARD` | AI context-sheet digitisation (Phases 0-5) | **Import:** Directly loads Phase 1 `ctx_sheet_*.json` via shared `schemas/context-sheet-v1.json` contract. **Export:** Produces EEDP path files for hallucination-free AI report generation. |
 | **Trowel** | `~/Projects/trowel` | Compliance report drafting from field data | **Bi-directional:** Shares context data model. Trowel consumes StratiGraph's EEDP exports for deterministic stratigraphic narrative generation. Both share `cuts`/`fills`/`same_as` relationship fields. |
 | **Libby** | `~/Projects/Libby` | Bayesian radiocarbon calibration | **Export:** Upload `events.csv`, get a fully structured `OxCal CQL` script with transitively reduced stratigraphic constraints for MCMC modelling. |
+| **ArchesDB** | | Heritage Inventory System | **Export:** One-way JSON export conforming to CIDOC-CRM `A8_Stratigraphic_Unit` and relationships. |
 | **Paleo** | `~/Projects/Paleo` | Palaeontology AI platform | **Research:** Paleo-coastline data research conducted for palaeoenvironmental reconstruction integration (see `docs/research-papers/`). |
 | **Dibble** | `~/Projects/dibble` | Lithic analysis | **Ecosystem:** Shares the broader vision of connected digital heritage tools. |
 

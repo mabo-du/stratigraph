@@ -82,12 +82,13 @@ Format: `- [ ] tNNN Description @owner #tag ~estimate risk:level logged:date`
 - [x] t028 PWA/offline support (service worker + IndexedDB) #perf ~2h risk:med logged:2026-05-29
 - [x] t029 Real-time collaboration (CRDTs/WebSockets) #collab ~6h risk:high logged:2026-05-29
 - [x] t030 3D model integration (Three.js photogrammetry) #3d ~4h risk:high logged:2026-05-29
+- [x] t023 Photo/finds display on nodes #ui ~1h risk:low logged:2026-05-29
 
 ## Ready (no blockers)
 
 <!-- Tasks with no open blockers — run /ready to refresh -->
 
-- [ ] t023 Photo/finds display on nodes #ui ~1h risk:low logged:2026-05-29
+- [ ] (No open blockers at this time)
 
 ## Backlog
 
@@ -95,7 +96,7 @@ Format: `- [ ] tNNN Description @owner #tag ~estimate risk:level logged:date`
 
 ## In Progress
 
-- [x] t031 Project documentation update (AGENTS.md, README.md, TODO.md) ~30m actual:15m risk:low started:2026-05-29 logged:2026-05-29
+- [x] t031 Project documentation update (AGENTS.md, README.md, TODO.md) ~30m actual:30m risk:low started:2026-05-29 logged:2026-05-29
 
 ## In Review
 

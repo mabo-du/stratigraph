@@ -24,6 +24,7 @@ import {
   generateCytoscapeStyle,
 } from '../../utils/cytoscapeHelpers';
 import { exportPNG, exportSVGFallback, exportPDF } from '../../utils/fileUtils';
+import { loadMedia } from '../../utils/offlineMediaStorage';
 
 // Register extensions once (guard against double-registration in StrictMode)
 try { cytoscape.use(dagre); } catch { /* already registered */ }
@@ -98,10 +99,42 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
     const onLayoutCompleteRef = useRef(props.onLayoutComplete);
     const projectNameRef = useRef(props.projectName);
 
+    // Resolved local media URLs
+    const [resolvedMediaUrls, setResolvedMediaUrls] = useState<Record<string, string>>({});
+
     useEffect(() => { onNodeSelectRef.current = props.onNodeSelect; });
     useEffect(() => { onPositionsChangeRef.current = props.onPositionsChange; });
     useEffect(() => { onLayoutCompleteRef.current = props.onLayoutComplete; });
     useEffect(() => { projectNameRef.current = props.projectName; });
+
+    // ── Resolve Media Blobs ───────────────────────────────────────────────
+    useEffect(() => {
+      let active = true;
+      const resolveUrls = async () => {
+        const newUrls: Record<string, string> = {};
+        let changed = false;
+        for (const ctx of props.contexts) {
+          if (ctx.mediaRefs && ctx.mediaRefs.length > 0) {
+            const uuid = ctx.mediaRefs[0];
+            // If already resolved, keep it, otherwise load
+            if (!resolvedMediaUrls[ctx.id] || !resolvedMediaUrls[ctx.id].includes('blob:')) {
+               const url = await loadMedia(uuid);
+               if (url) {
+                 newUrls[ctx.id] = url;
+                 changed = true;
+               }
+            } else {
+               newUrls[ctx.id] = resolvedMediaUrls[ctx.id];
+            }
+          }
+        }
+        if (active && changed) {
+          setResolvedMediaUrls(newUrls);
+        }
+      };
+      resolveUrls();
+      return () => { active = false; };
+    }, [props.contexts, props.dataVersion]);
 
     // ── Initialise Cytoscape once ──────────────────────────────────────────
     useEffect(() => {
@@ -178,6 +211,7 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
             props.heatmapMode,
             props.events,
             props.collapsedPhases,
+            resolvedMediaUrls
           )
         );
         performance.mark('cy-add-end');
@@ -202,6 +236,7 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
       props.showPhaseGroups,
       props.heatmapMode,
       props.events,
+      resolvedMediaUrls,
       // positions deliberately NOT included here: they're applied above only on init
       // and updated separately via dragfree events
     ]);
@@ -213,7 +248,7 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
       cy.style(generateCytoscapeStyle(props.theme, props.publicationTemplate));
       
       const elements = buildCytoscapeElements(
-        props.contexts, props.observations, props.phases, props.positions, props.showPhaseGroups, props.heatmapMode, props.events, props.collapsedPhases
+        props.contexts, props.observations, props.phases, props.positions, props.showPhaseGroups, props.heatmapMode, props.events, props.collapsedPhases, resolvedMediaUrls
       );
       const nodeElements = elements.filter(el => !el.data?.source);
       nodeElements.forEach(el => {

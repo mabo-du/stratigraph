@@ -27,6 +27,7 @@ export function buildCytoscapeElements(
   heatmapMode: boolean = false,
   events: Event[] = [],
   collapsedPhases: Set<string> = new Set(),
+  resolvedMediaUrls: Record<string, string> = {}
 ): ElementDefinition[] {
   const phaseMap = new Map(phases.map(p => [p.id, p]));
   const elements: ElementDefinition[] = [];
@@ -97,7 +98,7 @@ export function buildCytoscapeElements(
         description: ctx.description ?? '',
         phaseColor: nodeColor,
         phase: ctx.phase ?? '',
-        photoUrl: ctx.photoUrl,
+        photoUrl: resolvedMediaUrls[ctx.id] || ctx.photoUrl,
       },
       ...(pos ? { position: { x: pos.x, y: pos.y } } : {}),
     });

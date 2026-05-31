@@ -45,7 +45,8 @@ interface ToolbarProps {
   onExportHoardJson: () => void;
   onExportReport: () => void;
   onExportReportJson: () => void;
-  onExportGeoJSON: () => void;
+  onExportGeoJSON: (crs: 'EPSG:4326' | 'EPSG:3857') => void;
+  onExportArches: () => void;
   contextCount: number;
   showPhaseGroups: boolean;
   onTogglePhaseGroups: () => void;
@@ -99,6 +100,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onExportReport,
   onExportReportJson,
   onExportGeoJSON,
+  onExportArches,
   contextCount,
   showPhaseGroups,
   onTogglePhaseGroups,
@@ -296,6 +298,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     >
                       Minimal (B&W)
                     </button>
+                    <button className="menu-item" onClick={() => { onExportArches(); setShowExportMenu(false); }}>
+                      ArchesDB (CIDOC-CRM)
+                    </button>
                   </div>
                 </>
               )}
@@ -454,9 +459,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={() => { onExportGeoJSON(); setShowExportMenu(false); }}
+                  onClick={() => { onExportGeoJSON('EPSG:4326'); setShowExportMenu(false); }}
                 >
-                  Export GeoJSON (for QGIS)
+                  Export GeoJSON (EPSG:4326 / WGS84)
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => { onExportGeoJSON('EPSG:3857'); setShowExportMenu(false); }}
+                >
+                  Export GeoJSON (EPSG:3857 / Web Mercator)
                 </button>
                 <button
                   className="dropdown-item"

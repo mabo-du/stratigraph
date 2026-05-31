@@ -42,6 +42,10 @@ export function createAwareness(
       callbacks.push(cb);
       // Fire immediately with current state
       cb(Array.from(states.values()));
+      return () => {
+        const idx = callbacks.indexOf(cb);
+        if (idx >= 0) callbacks.splice(idx, 1);
+      };
     },
     /** Called when a remote awareness state arrives */
     receiveRemote: (userId: string, state: AwarenessState) => {

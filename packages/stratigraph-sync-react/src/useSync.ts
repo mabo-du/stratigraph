@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback } from 'react';
+import { useSyncExternalStore, useCallback, useRef } from 'react';
 import { useSyncContext } from './SyncProvider';
 import type { RoomMaps } from '@stratigraph/sync';
 
@@ -15,11 +15,16 @@ import type { RoomMaps } from '@stratigraph/sync';
  */
 export function useSync<T>(selector: (maps: RoomMaps) => T): T {
   const { room } = useSyncContext();
+  const revisionRef = useRef(0);
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+
+  const snapshotRef = useRef<{ revision: number; value: T } | null>(null);
 
   const getSnapshot = useCallback((): T => {
     if (!room) {
       // Return empty state when no room exists
-      return selector({
+      return selectorRef.current({
         contexts: new Map(),
         observations: new Map(),
         phases: new Map(),
@@ -29,15 +34,26 @@ export function useSync<T>(selector: (maps: RoomMaps) => T): T {
         room: new Map(),
       });
     }
-    return selector(room.maps);
-  }, [room, selector]);
+
+    if (snapshotRef.current && snapshotRef.current.revision === revisionRef.current) {
+      return snapshotRef.current.value;
+    }
+
+    const newValue = selectorRef.current(room.maps);
+    snapshotRef.current = { revision: revisionRef.current, value: newValue };
+    return newValue;
+  }, [room]);
 
   const subscribe = useCallback((callback: () => void) => {
     if (!room) return () => {};
     // Yjs fires afterTransaction for any shared type change
-    room.doc.on('afterTransaction', callback);
+    const handler = () => {
+      revisionRef.current++;
+      callback();
+    };
+    room.doc.on('afterTransaction', handler);
     return () => {
-      room.doc.off('afterTransaction', callback);
+      room.doc.off('afterTransaction', handler);
     };
   }, [room]);
 

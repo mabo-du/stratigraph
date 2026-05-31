@@ -9,6 +9,7 @@ import { CalibrationPanel } from '../CalibrationPanel';
 import type { Context, Observation, Phase, Event } from '../../models/hmdp';
 import { ContextType, RelationshipType } from '../../models/hmdp';
 import { DEFAULT_PHASE_COLORS } from '../../models/matrixState';
+import { saveMedia, loadMedia } from '../../utils/offlineMediaStorage';
 
 interface SidebarProps {
   contexts: Context[];
@@ -331,7 +332,10 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
   const [type, setType] = useState(context.type);
   const [phase, setPhase] = useState(context.phase ?? '');
   const [photoUrl, setPhotoUrl] = useState(context.photoUrl ?? '');
+  const [mediaRefs, setMediaRefs] = useState<string[]>(context.mediaRefs ?? []);
+  const [resolvedMediaUrl, setResolvedMediaUrl] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Reset when context changes
   React.useEffect(() => {
@@ -339,8 +343,22 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
     setType(context.type);
     setPhase(context.phase ?? '');
     setPhotoUrl(context.photoUrl ?? '');
+    setMediaRefs(context.mediaRefs ?? []);
     setIsDirty(false);
-  }, [context.id, context.description, context.type, context.phase, context.photoUrl]);
+  }, [context.id, context.description, context.type, context.phase, context.photoUrl, context.mediaRefs]);
+
+  // Resolve local media URL if available
+  React.useEffect(() => {
+    let active = true;
+    if (mediaRefs.length > 0) {
+      loadMedia(mediaRefs[0]).then(url => {
+        if (active && url) setResolvedMediaUrl(url);
+      });
+    } else {
+      setResolvedMediaUrl(null);
+    }
+    return () => { active = false; };
+  }, [mediaRefs]);
 
   const [newRelTarget, setNewRelTarget] = useState('');
   const [newRelType, setNewRelType] = useState<RelationshipType>(RelationshipType.Above);
@@ -351,8 +369,31 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
   );
 
   const saveChanges = () => {
-    onUpdate({ ...context, description: desc || undefined, type, phase: phase || undefined, photoUrl: photoUrl || undefined });
+    onUpdate({ 
+      ...context, 
+      description: desc || undefined, 
+      type, 
+      phase: phase || undefined, 
+      photoUrl: photoUrl || undefined,
+      mediaRefs: mediaRefs.length > 0 ? mediaRefs : undefined,
+    });
     setIsDirty(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const uuid = await saveMedia(file);
+      setMediaRefs([uuid]);
+      setIsDirty(true);
+    } catch (err) {
+      console.error('Failed to save media', err);
+      alert('Failed to save image.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const addRelationship = () => {
@@ -454,16 +495,23 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
 
         {/* Photo URL */}
         <div className="form-row">
-          <label>Photo/Finds URL</label>
-          <input
-            className="form-input"
-            placeholder="https://... (optional image URL)"
-            value={photoUrl}
-            onChange={e => { setPhotoUrl(e.target.value); setIsDirty(true); }}
-          />
-          {photoUrl && (
+          <label>Photo/Finds (URL or Upload)</label>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+            <input
+              className="form-input"
+              style={{ flex: 1 }}
+              placeholder="https://... (optional URL)"
+              value={photoUrl}
+              onChange={e => { setPhotoUrl(e.target.value); setIsDirty(true); }}
+            />
+            <label className="btn btn--ghost" style={{ cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}>
+              {isUploading ? '...' : 'Upload'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
+            </label>
+          </div>
+          {(resolvedMediaUrl || photoUrl) && (
             <div style={{ marginTop: 8, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
-              <img src={photoUrl} alt="Context preview" style={{ display: 'block', width: '100%', maxHeight: 150, objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <img src={resolvedMediaUrl || photoUrl} alt="Context preview" style={{ display: 'block', width: '100%', maxHeight: 150, objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
           )}
         </div>

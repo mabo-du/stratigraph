@@ -91,3 +91,13 @@ export type MatrixAction =
   | { type: 'SET_SIDEBAR_TAB'; tab: 'units' | 'phases' }
   | { type: 'UNDO' }
   | { type: 'REDO' };
+
+export interface MatrixStoreAPI {
+  state: MatrixState;
+  dispatch: React.Dispatch<MatrixAction>;
+  canUndo: boolean;
+  canRedo: boolean;
+  isLoaded: boolean;
+  undo: () => void;
+  redo: () => void;
+}

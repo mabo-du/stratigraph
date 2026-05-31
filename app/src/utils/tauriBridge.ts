@@ -41,7 +41,7 @@ export function isTauri(): boolean {
  * Falls back to a hidden <input> element in the browser.
  */
 export async function openFileDialog(
-  options: { filters?: { name: string; extensions: string[] }[]; multiple?: boolean } = {}
+  options: { filters?: { name: string; extensions: string[] }[]; multiple?: boolean; asBinary?: boolean } = {}
 ): Promise<File[] | null> {
   await initTauri();
 
@@ -61,9 +61,14 @@ export async function openFileDialog(
 
       for (const path of paths) {
         if (typeof path === 'string' && _tauriFs) {
-          const contents = await _tauriFs.readTextFile(path);
           const name = path.split(/[/\\]/).pop() || 'file';
-          files.push(new File([contents], name, { type: 'text/plain' }));
+          if (options.asBinary) {
+            const bytes = await _tauriFs.readFile(path);
+            files.push(new File([bytes], name, { type: 'application/octet-stream' }));
+          } else {
+            const contents = await _tauriFs.readTextFile(path);
+            files.push(new File([contents], name, { type: 'text/plain' }));
+          }
         }
       }
 
@@ -99,8 +104,8 @@ export async function openFileDialog(
  * Falls back to a browser download in non-Tauri environments.
  */
 export async function saveFileDialog(
-  content: string,
-  options: { defaultName?: string; filters?: { name: string; extensions: string[] }[] } = {}
+  content: string | Uint8Array,
+  options: { defaultName?: string; filters?: { name: string; extensions: string[] }[]; asBinary?: boolean } = {}
 ): Promise<boolean> {
   await initTauri();
 
@@ -115,7 +120,11 @@ export async function saveFileDialog(
       });
       if (!path) return false;
 
-      await _tauriFs.writeTextFile(path, content);
+      if (options.asBinary && content instanceof Uint8Array) {
+        await _tauriFs.writeFile(path, content);
+      } else {
+        await _tauriFs.writeTextFile(path, content as string);
+      }
       return true;
     } catch {
       // Fall through to browser fallback
@@ -136,7 +145,7 @@ export async function saveFileDialog(
 
   const ext = options.defaultName?.split('.').pop() || 'json';
   const mime = mimeTypes[ext] || 'application/octet-stream';
-  const blob = new Blob([content], { type: mime });
+  const blob = new Blob([content as any], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -152,9 +161,13 @@ export async function saveFileDialog(
  * Read a file's text content using native dialog.
  * Browser fallback uses file input.
  */
-export async function readFile(): Promise<{ name: string; content: string } | null> {
-  const files = await openFileDialog({ multiple: false });
+export async function readFile(asBinary: boolean = false): Promise<{ name: string; content: string | Uint8Array } | null> {
+  const files = await openFileDialog({ multiple: false, asBinary });
   if (!files || files.length === 0) return null;
   const file = files[0];
+  if (asBinary) {
+    const buffer = await file.arrayBuffer();
+    return { name: file.name, content: new Uint8Array(buffer) };
+  }
   return { name: file.name, content: await file.text() };
 }

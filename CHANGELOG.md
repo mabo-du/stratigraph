@@ -5,6 +5,21 @@ All notable changes to StratiGraph will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **P2P Collaboration** — Real-time peer-to-peer sync over WebRTC with Yjs CRDTs.
+- **Local Network Discovery** — Auto-discovery of peers via mDNS (Tauri desktop).
+- **Offline Media Management** — Hybrid SQLite (Tauri) and IndexedDB (Web) storage for attaching local photos/finds to contexts.
+- **GeoJSON Export** — Export contexts with spatial coordinates to standard GeoJSON (EPSG:4326/3857).
+- **ArchesDB Export** — One-way export to CIDOC-CRM compliant JSON.
+- **Legacy Import** — Support for importing classic `.LST` (ArchEd/BASP) files.
+- **Binary Support** — Upgraded Tauri bridge to natively handle `Uint8Array` payloads for seamless offline media.
+
+### Changed
+- Migrated core state from `useReducer` to `Y.Doc` for distributed consensus.
+- Refactored `Workspace` component to coordinate `MatrixStore` state and UI.
+
 ## [1.0.0] — 2026-05-29
 
 ### Added
