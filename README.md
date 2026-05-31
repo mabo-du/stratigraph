@@ -3,7 +3,7 @@
   <h1>StratiGraph</h1>
   <p><strong>A Modern, AI-Ready Harris Matrix Generator & Digital Heritage Hub</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/status-v1%20MVP%20substantially%20complete-4a9e6f" alt="Status">
+    <img src="https://img.shields.io/badge/status-v2%20complete-4a9e6f" alt="Status">
     <img src="https://img.shields.io/badge/license-MIT-2a3a4a" alt="License">
     <img src="https://img.shields.io/badge/TypeScript-React-3178c6" alt="TypeScript React">
     <img src="https://img.shields.io/badge/tests-6%20suites%20all%20passing-4a9e6f" alt="Tests">
@@ -20,7 +20,7 @@
 
 StratiGraph is a premium, entirely browser-based tool designed for archaeologists to visually construct, validate, and export stratigraphic sequences (Harris Matrices) — the directed acyclic graphs used in every stratigraphic excavation. Unlike legacy software, StratiGraph seamlessly integrates modern data visualization with Bayesian geochronology, GIS interoperability, and Artificial Intelligence readiness.
 
-**Current status:** v2 features currently in development — Real-time WebRTC CRDT collaboration, Offline Media Management (SQLite), GeoJSON/ArchesDB export, core DAG engine, HOARD AI import/export, Libby/OxCal Bayesian export, CSV import with column mapping, full UI with dark/light mode, and exports to PNG/SVG/PDF. See [AGENTS.md](AGENTS.md) for architecture and quick start.
+**Current status:** v2 complete — Real-time WebRTC CRDT collaboration, Offline Media Management (SQLite), GeoJSON/ArchesDB export, core DAG engine, HOARD AI import/export, Libby/OxCal Bayesian export, CSV import with column mapping, full UI with dark/light mode, and exports to PNG/SVG/PDF. See [AGENTS.md](AGENTS.md) for architecture and quick start.
 
 ## 🚀 Key Features
 
