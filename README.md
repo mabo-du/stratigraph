@@ -40,8 +40,6 @@ StratiGraph is the central hub of a comprehensive open-source digital heritage w
 | **Dibble** | `~/Projects/dibble` | Lithic analysis | **Ecosystem:** Shares the broader vision of connected digital heritage tools. |
 
 ### 3. Premium UI & Data Visualization
-
-### 3. Premium UI & Data Visualization
 Academics deserve nice things. StratiGraph features a highly polished user experience:
 *   **WYSIWYG Publication Mode:** Disable the auto-layout grid and freely drag, nudge, and lock nodes into pixel-perfect alignment for your final PDF publication.
 *   **Finds Density Heatmap:** Instantly switch the graph from sequence mode to heatmap mode. The matrix dynamically recolors itself based on the density of events/finds associated with each context.
