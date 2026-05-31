@@ -13,7 +13,9 @@
 ---
 
 <div align="center">
-  <img src="assets/demo.webp" alt="StratiGraph UI Demo" width="800" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+  <img src="assets/features.gif" alt="StratiGraph Feature Tour — DAG engine, heatmap, publication mode, CSV import, themes, and ecosystem integration" width="800" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+  <br>
+  <sub>✦ Feature tour: DAG engine · Finds heatmap · Publication mode · CSV import · Dark/Light themes · Ecosystem</sub>
 </div>
 
 StratiGraph is a premium, entirely browser-based tool designed for archaeologists to visually construct, validate, and export stratigraphic sequences (Harris Matrices) — the directed acyclic graphs used in every stratigraphic excavation. Unlike legacy software, StratiGraph seamlessly integrates modern data visualization with Bayesian geochronology, GIS interoperability, and Artificial Intelligence readiness.
