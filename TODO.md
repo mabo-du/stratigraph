@@ -72,25 +72,26 @@ Format: `- [ ] tNNN Description @owner #tag ~estimate risk:level logged:date`
 - [x] t017 Save/load .hmatrix.json project files ~30m actual:30m logged:2026-05-04
 - [x] t018 HMDP schema contract (context-sheet-v1.json) ~30m actual:30m logged:2026-05-05
 - [x] t019 Test suite (6 files covering all modules) ~2h actual:2h logged:2026-05-05
+- [x] t020 GeoJSON export for QGIS integration #gis ~30m risk:low logged:2026-05-29
+- [x] t021 Legacy .LST format import (BASP/ArchEd) #import ~1h risk:low logged:2026-05-29
+- [x] t022 Publication templates (traditional Harris Matrix styling) #ui ~2h risk:med logged:2026-05-29
+- [x] t024 Tauri desktop wrapper for offline fieldwork #desktop ~4h risk:med logged:2026-05-29
+- [x] t025 HOARD Phase 5 document generation integration #hoard ~3h risk:med logged:2026-05-29
+- [x] t026 Proper field system import adapters (ArchesDB CIDOC-CRM, Intrasis) #import ~4h risk:high logged:2026-05-29
+- [x] t027 Collapsible phase groups #ui ~1h risk:low logged:2026-05-29
+- [x] t028 PWA/offline support (service worker + IndexedDB) #perf ~2h risk:med logged:2026-05-29
+- [x] t029 Real-time collaboration (CRDTs/WebSockets) #collab ~6h risk:high logged:2026-05-29
+- [x] t030 3D model integration (Three.js photogrammetry) #3d ~4h risk:high logged:2026-05-29
 
 ## Ready (no blockers)
 
 <!-- Tasks with no open blockers — run /ready to refresh -->
 
-- [ ] t020 GeoJSON export for QGIS integration #gis ~30m risk:low logged:2026-05-29
-- [ ] t021 Legacy .LST format import (BASP/ArchEd) #import ~1h risk:low logged:2026-05-29
-- [ ] t022 Publication templates (traditional Harris Matrix styling) #ui ~2h risk:med logged:2026-05-29
 - [ ] t023 Photo/finds display on nodes #ui ~1h risk:low logged:2026-05-29
 
 ## Backlog
 
-- [ ] t024 Tauri desktop wrapper for offline fieldwork #desktop ~4h risk:med logged:2026-05-29
-- [ ] t025 HOARD Phase 5 document generation integration #hoard ~3h risk:med logged:2026-05-29
-- [ ] t026 Proper field system import adapters (ArchesDB CIDOC-CRM, Intrasis) #import ~4h risk:high logged:2026-05-29
-- [ ] t027 Collapsible phase groups #ui ~1h risk:low logged:2026-05-29
-- [ ] t028 PWA/offline support (service worker + IndexedDB) #perf ~2h risk:med logged:2026-05-29
-- [ ] t029 Real-time collaboration (CRDTs/WebSockets) #collab ~6h risk:high logged:2026-05-29
-- [ ] t030 3D model integration (Three.js photogrammetry) #3d ~4h risk:high logged:2026-05-29
+<!-- Backlog tasks moved to Completed -->
 
 ## In Progress
 
@@ -119,5 +120,5 @@ Format: `- [ ] tNNN Description @owner #tag ~estimate risk:level logged:date`
 <!--/TOON:subtasks-->
 
 <!--TOON:summary{total,ready,pending,in_progress,in_review,done,declined,total_est,total_actual}:
-31,4,8,1,0,19,0,36h,,
+31,1,0,1,0,29,0,36h,,
 -->

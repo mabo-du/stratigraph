@@ -97,6 +97,7 @@ export function buildCytoscapeElements(
         description: ctx.description ?? '',
         phaseColor: nodeColor,
         phase: ctx.phase ?? '',
+        photoUrl: ctx.photoUrl,
       },
       ...(pos ? { position: { x: pos.x, y: pos.y } } : {}),
     });
@@ -215,6 +216,16 @@ export function generateCytoscapeStyle(
         'border-width': nodeBorderWidth,
         'border-color': borderColor,
         'border-opacity': 1,
+      },
+    },
+    // Nodes with photos
+    {
+      selector: 'node[photoUrl]',
+      style: {
+        'background-image': 'data(photoUrl)' as any,
+        'background-fit': 'cover',
+        'background-opacity': 0.85,
+        'background-clip': 'node',
       },
     },
     // Negative contexts (cuts/pits) — oval in traditional, rectangle in standard

@@ -137,6 +137,7 @@ const UnitList: React.FC<UnitListProps> = ({ contexts, phases, selectedId, onSel
   const [newType, setNewType] = useState<ContextType>(ContextType.Positive);
   const [newDesc, setNewDesc] = useState('');
   const [newPhase, setNewPhase] = useState('');
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [error, setError] = useState('');
 
   const phaseMap = new Map(phases.map(p => [p.id, p]));
@@ -160,10 +161,12 @@ const UnitList: React.FC<UnitListProps> = ({ contexts, phases, selectedId, onSel
       type: newType,
       description: newDesc.trim() || undefined,
       phase: newPhase || undefined,
+      photoUrl: newPhotoUrl.trim() || undefined,
     });
     setNewId('');
     setNewDesc('');
     setNewPhase('');
+    setNewPhotoUrl('');
     setNewType(ContextType.Positive);
     setError('');
     setShowAdd(false);
@@ -231,6 +234,15 @@ const UnitList: React.FC<UnitListProps> = ({ contexts, phases, selectedId, onSel
               placeholder="Brief description (optional)"
               value={newDesc}
               onChange={e => setNewDesc(e.target.value)}
+            />
+          </div>
+          <div className="form-row">
+            <label>Photo/Finds URL</label>
+            <input
+              className="form-input"
+              placeholder="https://... (optional image URL)"
+              value={newPhotoUrl}
+              onChange={e => setNewPhotoUrl(e.target.value)}
             />
           </div>
           <div className="form-actions">
@@ -318,20 +330,17 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
   const [desc, setDesc] = useState(context.description ?? '');
   const [type, setType] = useState(context.type);
   const [phase, setPhase] = useState(context.phase ?? '');
+  const [photoUrl, setPhotoUrl] = useState(context.photoUrl ?? '');
   const [isDirty, setIsDirty] = useState(false);
 
   // Reset when context changes
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDesc(context.description ?? '');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setType(context.type);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPhase(context.phase ?? '');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPhotoUrl(context.photoUrl ?? '');
     setIsDirty(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [context.id]);
+  }, [context.id, context.description, context.type, context.phase, context.photoUrl]);
 
   const [newRelTarget, setNewRelTarget] = useState('');
   const [newRelType, setNewRelType] = useState<RelationshipType>(RelationshipType.Above);
@@ -342,7 +351,7 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
   );
 
   const saveChanges = () => {
-    onUpdate({ ...context, description: desc || undefined, type, phase: phase || undefined });
+    onUpdate({ ...context, description: desc || undefined, type, phase: phase || undefined, photoUrl: photoUrl || undefined });
     setIsDirty(false);
   };
 
@@ -441,6 +450,22 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
             onChange={e => { setDesc(e.target.value); setIsDirty(true); }}
             rows={3}
           />
+        </div>
+
+        {/* Photo URL */}
+        <div className="form-row">
+          <label>Photo/Finds URL</label>
+          <input
+            className="form-input"
+            placeholder="https://... (optional image URL)"
+            value={photoUrl}
+            onChange={e => { setPhotoUrl(e.target.value); setIsDirty(true); }}
+          />
+          {photoUrl && (
+            <div style={{ marginTop: 8, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <img src={photoUrl} alt="Context preview" style={{ display: 'block', width: '100%', maxHeight: 150, objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            </div>
+          )}
         </div>
 
         {isDirty && (

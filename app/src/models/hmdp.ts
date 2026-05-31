@@ -38,6 +38,7 @@ export interface Context {
   period?: string;
   phase?: string;      // Phase ID reference
   spatial?: SpatialMetadata;
+  photoUrl?: string;   // Optional image URL for node display
 }
 
 export interface Observation {
