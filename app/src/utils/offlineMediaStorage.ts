@@ -45,11 +45,21 @@ async function getSqliteDb(): Promise<Database> {
 }
 
 /**
- * Saves a File/Blob to local storage.
- * Returns a unique UUID reference string.
+ * Saves a File/Blob to local storage using Content-Addressable Storage (CAS).
+ * Generates a SHA-256 hash of the binary content as the unique ID.
+ * Optionally verifies against an expected hash (explicitHash).
  */
-export async function saveMedia(file: File | Blob): Promise<string> {
-  const id = crypto.randomUUID();
+export async function saveMedia(file: File | Blob, explicitHash?: string): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const id = hashHex;
+
+  if (explicitHash && explicitHash !== hashHex) {
+    throw new Error(`CAS verification failed: expected ${explicitHash} but got ${hashHex}`);
+  }
+
   const mimeType = file.type || 'application/octet-stream';
 
   if (isTauri()) {
@@ -58,6 +68,10 @@ export async function saveMedia(file: File | Blob): Promise<string> {
     const uint8Array = new Uint8Array(arrayBuffer);
     const db = await getSqliteDb();
     
+    // Deduplicate: check if exists
+    const existing = await db.select<{ id: string }[]>('SELECT id FROM media_blobs WHERE id = $1', [id]);
+    if (existing && existing.length > 0) return id;
+
     // SQLite expects parameterized arrays for blobs
     await db.execute('INSERT INTO media_blobs (id, data, mime_type) VALUES ($1, $2, $3)', [
       id,
@@ -69,6 +83,16 @@ export async function saveMedia(file: File | Blob): Promise<string> {
     const db = await openIndexedDb();
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
+    
+    // Deduplicate: check if exists
+    const exists = await new Promise<boolean>((resolve) => {
+      const checkReq = store.get(id);
+      checkReq.onsuccess = () => resolve(!!checkReq.result);
+      checkReq.onerror = () => resolve(false);
+    });
+    
+    if (exists) return id;
+
     await new Promise<void>((resolve, reject) => {
       const req = store.put({ id, blob: file });
       req.onsuccess = () => resolve();
@@ -135,6 +159,27 @@ export async function deleteMedia(id: string): Promise<void> {
       const req = store.delete(id);
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
+    });
+  }
+}
+
+/**
+ * Returns a list of all locally stored CAS hashes.
+ * Used by Garbage Collection to identify orphaned blobs.
+ */
+export async function listMedia(): Promise<string[]> {
+  if (isTauri()) {
+    const db = await getSqliteDb();
+    const result = await db.select<{ id: string }[]>('SELECT id FROM media_blobs');
+    return result.map(r => r.id);
+  } else {
+    const db = await openIndexedDb();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    return new Promise((resolve) => {
+      const req = store.getAllKeys();
+      req.onsuccess = () => resolve(req.result as string[]);
+      req.onerror = () => resolve([]);
     });
   }
 }

@@ -25,13 +25,14 @@ export function useSync<T>(selector: (maps: RoomMaps) => T): T {
     if (!room) {
       // Return empty state when no room exists
       return selectorRef.current({
-        contexts: new Map(),
-        observations: new Map(),
-        phases: new Map(),
-        events: new Map(),
-        positions: new Map(),
-        meta: new Map(),
-        room: new Map(),
+        contexts: new Map() as any,
+        observations: new Map() as any,
+        phases: new Map() as any,
+        events: new Map() as any,
+        positions: new Map() as any,
+        meta: new Map() as any,
+        room: new Map() as any,
+        quarantined_edges: new Map() as any,
       });
     }
 

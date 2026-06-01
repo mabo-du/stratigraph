@@ -84,7 +84,10 @@ pub async fn connect_to_peer(
     addr: &str,
     awareness: Arc<RwLock<Awareness>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let (stream, _) = tokio_tungstenite::connect_async(addr).await?;
+    let (stream, _) = tokio::time::timeout(
+        std::time::Duration::from_millis(2000),
+        tokio_tungstenite::connect_async(addr)
+    ).await??;
     let (sink, stream) = stream.split();
     let sink = TungsteniteSink(sink);
     let stream = TungsteniteStream(stream);

@@ -2,13 +2,15 @@ import { Doc, UndoManager } from 'yjs';
 import type { RoomConfig, SyncProvider, SyncStatus, StatusEvent, RemoteChange, RoomMaps } from './types';
 import { createPersistence } from './persistence';
 import { createAwareness, type AwarenessManager } from './awareness';
+import { signUpdate, verifyUpdate } from '../../../app/src/security/crypto';
+import { performPostMergeReduction } from '../../../app/src/models/reconciliation';
 
 export class Room {
   readonly doc: Doc;
   readonly maps: RoomMaps;
   readonly awareness: AwarenessManager;
   readonly undoManager: UndoManager;
-  readonly config: { roomId: string; userId: string; displayName: string };
+  readonly config: RoomConfig;
   isLoaded: boolean = false;
   private _providers: Array<{ destroy(): void }> = [];
   private _status: { status: SyncStatus; pending: number } = {
@@ -21,10 +23,13 @@ export class Room {
   private _encryptionKey?: string;
 
   constructor(config: RoomConfig) {
-    this.config = { roomId: config.roomId, userId: config.userId, displayName: config.displayName };
+    this.config = config;
     this._encryptionKey = config.encryptionKey;
 
     this.doc = new Doc();
+
+    // Setup zero-trust intercept layer for this document instance
+    this.setupZeroTrustIntercept(config);
 
     // Create shared maps
     this.maps = {
@@ -35,10 +40,27 @@ export class Room {
       positions: this.doc.getMap('positions'),
       meta: this.doc.getMap('meta'),
       room: this.doc.getMap('room'),
+      quarantined_edges: this.doc.getMap('quarantined_edges'),
     };
 
     // Set room metadata on the shared map
     this.maps.room.set('roomId', config.roomId);
+
+    // Setup Re-entrancy guarded debounced Post-Merge Reduction
+    let reductionTimeout: NodeJS.Timeout | null = null;
+    this.doc.on('update', (_update: Uint8Array, origin: any) => {
+      // Guard against our own reduction edits
+      if (origin === 'post-merge-reduction' || origin === 'post-merge-resolution') return;
+      
+      // Trigger debounced reduction and GC
+      if (reductionTimeout) clearTimeout(reductionTimeout);
+      reductionTimeout = setTimeout(() => {
+        performPostMergeReduction(this.doc, config.userId);
+        if ((this as any).mediaSync) {
+          (this as any).mediaSync.runGarbageCollection();
+        }
+      }, 500); // 500ms debounce
+    });
 
     // Setup y-indexeddb persistence
     const persistCleanup = createPersistence(this.doc, config.persistence !== false, () => {
@@ -147,6 +169,20 @@ export class Room {
             this._setStatus(event.status as SyncStatus, this._status.pending);
           }
         });
+        
+        // Initialize MediaSync CAS transfer engine
+        if (this.config.localIdentity) {
+          Promise.all([
+            import('./mediaSync'),
+            import('@noble/ed25519'),
+            import('@noble/hashes/utils.js')
+          ]).then(([{ MediaSync }, _ed, { bytesToHex }]) => {
+            const privateKeyHex = bytesToHex(this.config.localIdentity!.privateKey);
+            const admittedPeersHex = ((this.doc as any).__admittedPeers || []).map((p: Uint8Array) => bytesToHex(p));
+            (this as any).mediaSync = new MediaSync(rtcProvider, this.doc, privateKeyHex, admittedPeersHex);
+          }).catch(console.error);
+        }
+
         this._providers.push(rtcProvider);
       });
     }
@@ -160,6 +196,90 @@ export class Room {
   private _emitStatus(): void {
     const e = { ...this._status };
     this._statusCallbacks.forEach((cb) => cb(e));
+  }
+
+  private setupZeroTrustIntercept(config: RoomConfig) {
+    // We attach interceptors to this specific document instance
+    const originalOn = this.doc.on.bind(this.doc);
+    
+    // Patch doc.on to intercept 'update' events
+    // @ts-ignore
+    this.doc.on = (name: string, f: Function) => {
+      if (name === 'update') {
+        const wrapped = (update: Uint8Array, origin: any, doc: Doc, tr: any) => {
+          // If this update was generated locally (not from persistence/remote)
+          if (config.localIdentity) {
+            const sig = signUpdate(update, config.localIdentity.privateKey);
+            const signedUpdate = new Uint8Array(sig.length + update.length);
+            signedUpdate.set(sig, 0);
+            signedUpdate.set(update, sig.length);
+            f(signedUpdate, origin, doc, tr);
+          } else {
+            // Fallback for unauthenticated state, shouldn't happen in strict v3
+            f(update, origin, doc, tr);
+          }
+        };
+        return originalOn(name as any, wrapped as any);
+      }
+      return originalOn(name as any, f as any);
+    };
+
+    // Note: We need a way to intercept incoming updates before applyUpdate is called,
+    // or monkey-patch Y.applyUpdate globally. For safety and avoiding global side effects,
+    // we monkey-patch the Y module globally but scope the check to docs that have localIdentity.
+    // However, a cleaner way in the browser is to wrap Y.applyUpdate natively.
+    if (!(globalThis as any).__yjs_intercepted) {
+      (globalThis as any).__yjs_intercepted = true;
+      const Y = require('yjs');
+      const originalApplyUpdate = Y.applyUpdate;
+      Y.applyUpdate = function(doc: Doc, update: Uint8Array, transactionOrigin?: any) {
+        // Only enforce for signed docs (64 byte sig prefix)
+        if (update.length > 64) {
+          const sig = update.slice(0, 64);
+          const realUpdate = update.slice(64);
+          
+          // Bootstrap carve-out: Trust our own local identity
+          // In a real app we'd verify against a known list of admitted peers
+          let verified = false;
+          const knownPeers = (doc as any).__admittedPeers || [];
+          for (const pk of knownPeers) {
+            if (verifyUpdate(sig, realUpdate, pk)) {
+              verified = true;
+              break;
+            }
+          }
+          
+          if (verified) {
+            return originalApplyUpdate(doc, realUpdate, transactionOrigin);
+          } else {
+            console.warn("Rejected untrusted Yjs update");
+            return;
+          }
+        }
+        
+        // Unsigned update (e.g. from local persistence bootstrap)
+        return originalApplyUpdate(doc, update, transactionOrigin);
+      };
+      
+      const originalEncodeStateAsUpdate = Y.encodeStateAsUpdate;
+      Y.encodeStateAsUpdate = function(doc: Doc, encodedTargetStateVector?: Uint8Array) {
+        const update = originalEncodeStateAsUpdate(doc, encodedTargetStateVector);
+        if ((doc as any).__localIdentity) {
+           const sig = signUpdate(update, (doc as any).__localIdentity.privateKey);
+           const signedUpdate = new Uint8Array(sig.length + update.length);
+           signedUpdate.set(sig, 0);
+           signedUpdate.set(update, sig.length);
+           return signedUpdate;
+        }
+        return update;
+      };
+    }
+    
+    if (config.localIdentity) {
+      (this.doc as any).__localIdentity = config.localIdentity;
+      // Initialize admitted peers list including self (bootstrap carve-out)
+      (this.doc as any).__admittedPeers = [config.localIdentity.publicKey, ...(config.admittedPeers || [])];
+    }
   }
 }
 

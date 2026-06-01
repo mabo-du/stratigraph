@@ -1,4 +1,4 @@
-
+import * as Y from 'yjs';
 
 /** Configuration for creating or joining a collaboration room */
 export interface RoomConfig {
@@ -14,6 +14,8 @@ export interface RoomConfig {
   encryptionKey?: string;
   /** Enable y-indexeddb persistence (default: true) */
   persistence?: boolean;
+  localIdentity?: { privateKey: Uint8Array; publicKey: Uint8Array };
+  admittedPeers?: Uint8Array[];
 }
 
 /** A sync provider configuration */
@@ -23,13 +25,14 @@ export type SyncProvider =
 
 /** Mapping from collection name to Y.Map reference */
 export interface RoomMaps {
-  contexts: any;
-  observations: any;
-  phases: any;
-  events: any;
-  positions: any;
-  meta: any;
-  room: any;
+  contexts: Y.Map<any>;
+  observations: Y.Map<any>;
+  phases: Y.Map<any>;
+  events: Y.Map<any>;
+  positions: Y.Map<any>;
+  meta: Y.Map<any>;
+  room: Y.Map<any>;
+  quarantined_edges: Y.Map<any>;
 }
 
 /** Awareness state for a single user */

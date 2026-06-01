@@ -10,6 +10,7 @@ import type { Context, Observation, Phase, Event } from '../../models/hmdp';
 import { ContextType, RelationshipType } from '../../models/hmdp';
 import { DEFAULT_PHASE_COLORS } from '../../models/matrixState';
 import { saveMedia, loadMedia } from '../../utils/offlineMediaStorage';
+import { ConflictPanel } from './ConflictPanel';
 
 interface SidebarProps {
   contexts: Context[];
@@ -56,6 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="sidebar">
+      <ConflictPanel />
       {/* Tabs */}
       <div className="sidebar-tabs">
         <button
@@ -350,14 +352,27 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
   // Resolve local media URL if available
   React.useEffect(() => {
     let active = true;
-    if (mediaRefs.length > 0) {
-      loadMedia(mediaRefs[0]).then(url => {
-        if (active && url) setResolvedMediaUrl(url);
-      });
-    } else {
-      setResolvedMediaUrl(null);
-    }
-    return () => { active = false; };
+    let timer: any;
+
+    const checkMedia = async () => {
+      if (mediaRefs.length > 0) {
+        const url = await loadMedia(mediaRefs[0]);
+        if (active) {
+          if (url) {
+            setResolvedMediaUrl(url);
+          } else {
+            setResolvedMediaUrl(null);
+            // Poll periodically while missing (e.g. syncing from peer)
+            timer = setTimeout(checkMedia, 2000);
+          }
+        }
+      } else {
+        if (active) setResolvedMediaUrl(null);
+      }
+    };
+
+    checkMedia();
+    return () => { active = false; clearTimeout(timer); };
   }, [mediaRefs]);
 
   const [newRelTarget, setNewRelTarget] = useState('');
@@ -512,6 +527,12 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
           {(resolvedMediaUrl || photoUrl) && (
             <div style={{ marginTop: 8, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
               <img src={resolvedMediaUrl || photoUrl} alt="Context preview" style={{ display: 'block', width: '100%', maxHeight: 150, objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            </div>
+          )}
+          {(!resolvedMediaUrl && mediaRefs.length > 0) && (
+            <div style={{ marginTop: 8, padding: 12, borderRadius: 4, background: 'var(--bg-2)', border: '1px dashed var(--border)', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-2)' }}>
+              <span className="sync-spinner" style={{ display: 'inline-block', marginRight: 8, animation: 'spin 2s linear infinite' }}>↻</span>
+              Syncing image...
             </div>
           )}
         </div>

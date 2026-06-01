@@ -3,11 +3,19 @@
   <Fragment>
     <DirectoryRef Id="INSTALLDIR">
       <Component Id="FirewallException" Guid="*">
-        <fw:FirewallException Id="StratiGraphFW"
-                              Name="StratiGraph"
+        <fw:FirewallException Id="StratiGraphFW_TCP"
+                              Name="StratiGraph Local Sync (TCP)"
                               Program="[INSTALLDIR]StratiGraph.exe"
+                              Protocol="tcp"
                               Scope="any"
-                              Profile="all"
+                              Profile="private"
+                              IgnoreFailure="yes" />
+        <fw:FirewallException Id="StratiGraphFW_UDP"
+                              Name="StratiGraph Discovery (UDP)"
+                              Program="[INSTALLDIR]StratiGraph.exe"
+                              Protocol="udp"
+                              Scope="any"
+                              Profile="private"
                               IgnoreFailure="yes" />
       </Component>
     </DirectoryRef>

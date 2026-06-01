@@ -100,4 +100,6 @@ export interface MatrixStoreAPI {
   isLoaded: boolean;
   undo: () => void;
   redo: () => void;
+  doc?: any; // Y.Doc reference
+  quarantinedEdges?: Map<string, any>;
 }

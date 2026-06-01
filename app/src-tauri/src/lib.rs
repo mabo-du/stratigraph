@@ -14,6 +14,14 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_sql::Builder::new().build())
+        .plugin(tauri_plugin_stronghold::Builder::new(|password| {
+            use sha2::{Sha256, Digest};
+            let salt = b"stratigraph_secure_salt_v1";
+            let mut hasher = Sha256::new();
+            hasher.update(password.as_bytes());
+            hasher.update(salt);
+            hasher.finalize().to_vec()
+        }).build())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -43,20 +51,28 @@ pub fn run() {
                 node_id: node_id.clone(),
                 port,
                 awareness: awareness.clone(),
+                registered_services: std::sync::Mutex::new(Vec::new()),
             });
-
-            // Optionally auto-register service immediately
-            // But we might need room_id, so this can also be a command.
-            // For now, let's just register with a default or pass it through.
-            mdns_plugin::register_service(&daemon, port, "global-room", "Stratigraph-Node", &node_id)
-                .expect("Failed to register mDNS service");
 
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             mdns_plugin::start_discovery,
-            mdns_plugin::get_local_port
+            mdns_plugin::get_local_port,
+            mdns_plugin::register_service
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                let state = app_handle.state::<mdns_plugin::MdnsState>();
+                let services = state.registered_services.lock().unwrap();
+                for fullname in services.iter() {
+                    log::info!("Unregistering mDNS service: {}", fullname);
+                    let _ = state.daemon.unregister(fullname);
+                }
+                // Allow brief time for UDP goodbye packets to be broadcast
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+        });
 }

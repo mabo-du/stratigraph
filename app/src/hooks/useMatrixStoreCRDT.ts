@@ -13,6 +13,7 @@ export function useMatrixStoreCRDT(): MatrixStoreAPI {
   const events = useSync(maps => Array.from(maps.events.values()) as Event[]);
   const positions = useSync(maps => Object.fromEntries(maps.positions.entries()));
   const metaMap = useSync(maps => Object.fromEntries(maps.meta.entries()) as Partial<ProjectMeta>);
+  const quarantinedEdges = useSync(maps => new Map(maps.quarantined_edges.entries()));
 
   // Local UI state
   const [selectedContextId, setSelectedContextId] = useState<string | null>(null);
@@ -169,5 +170,7 @@ export function useMatrixStoreCRDT(): MatrixStoreAPI {
     isLoaded,
     undo: () => dispatch({ type: 'UNDO' }),
     redo: () => dispatch({ type: 'REDO' }),
+    doc: room?.doc,
+    quarantinedEdges,
   };
 }

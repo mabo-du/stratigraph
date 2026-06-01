@@ -88,7 +88,9 @@ Format: `- [ ] tNNN Description @owner #tag ~estimate risk:level logged:date`
 
 <!-- Tasks with no open blockers — run /ready to refresh -->
 
-- [ ] (No open blockers at this time)
+- [ ] t032 Semantic Graph RAG (In-Browser Knowledge Graphs) — Translate HMDP to CIDOC-CRM triples via Oxigraph WASM for LLM ingestion #ai ~3h risk:high
+- [ ] t033 Spatiotemporal Phasing & Bayesian Visualization — Project nodes onto a vertical absolute-time axis using aoristic probability distributions from Libby #geochronology ~4h risk:high
+- [ ] t034 Pleistocene Paleo-Coastline Mapping — Integrate ICE-7G_NA data from Paleo: Mapper API to dynamically adjust GIS map base layers #paleo ~3h risk:med
 
 ## Backlog
 

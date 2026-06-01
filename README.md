@@ -20,7 +20,7 @@
 
 StratiGraph is a premium, entirely browser-based tool designed for archaeologists to visually construct, validate, and export stratigraphic sequences (Harris Matrices) — the directed acyclic graphs used in every stratigraphic excavation. Unlike legacy software, StratiGraph seamlessly integrates modern data visualization with Bayesian geochronology, GIS interoperability, and Artificial Intelligence readiness.
 
-**Current status:** v2 complete — Real-time WebRTC CRDT collaboration, Offline Media Management (SQLite), GeoJSON/ArchesDB export, core DAG engine, HOARD AI import/export, Libby/OxCal Bayesian export, CSV import with column mapping, full UI with dark/light mode, and exports to PNG/SVG/PDF. See [AGENTS.md](AGENTS.md) for architecture and quick start.
+**Current status:** v2 complete & Zero-Infrastructure Architecture deployed — Real-time WebRTC CRDT collaboration, OS Hardened Tauri Desktop App (Windows/macOS native firewall exceptions), Zero-Trust cryptographic identity, CAS Binary Sync, 3D Photogrammetry model integration, GeoJSON/ArchesDB export, core DAG engine, HOARD AI import/export, Libby/OxCal Bayesian export, full UI with dark/light mode, and exports to PNG/SVG/PDF. See [AGENTS.md](AGENTS.md) for architecture and quick start.
 
 ## 🚀 Key Features
 
@@ -45,6 +45,15 @@ Academics deserve nice things. StratiGraph features a highly polished user exper
 *   **Finds Density Heatmap:** Instantly switch the graph from sequence mode to heatmap mode. The matrix dynamically recolors itself based on the density of events/finds associated with each context.
 *   **Late-Night Dark Mode:** A seamlessly integrated Dark Mode that cascades beautifully into the Cytoscape canvas itself.
 *   **Frictionless CSV Imports:** Upload standard `contexts.csv` and `relationships.csv` files with a robust, visual column mapper.
+
+### 4. Zero-Trust P2P Architecture (v2 completed)
+StratiGraph uses WebRTC, CRDTs (Yjs), and an mDNS daemon within a Tauri native wrapper to enable real-time, offline graph editing. Cryptographic identity is enforced by Ed25519 signatures, preventing rogue edits in remote field conditions, and the native wrapper dynamically handles strict OS-level firewalls (Windows Defender `Profile="private"` exceptions and macOS TCC rules).
+
+## 🔮 Future v3 Roadmap
+We are actively researching the following major architectural expansions:
+1. **Semantic Graph RAG:** Translating the HMDP DAG into formal CIDOC-CRM triples via an in-browser Oxigraph WASM database for LLM graph-retrieval interactions.
+2. **Spatiotemporal Geochronology:** Projecting nodes onto an absolute vertical time axis using Aoristic probability distributions imported directly from our Bayesian modelling engine (Libby).
+3. **Pleistocene Paleo-Coastline Mapping:** Fetching ICE-7G_NA NetCDF data from the `Paleo` API sidecar to adjust GIS map base layers for ancient sea-levels natively within StratiGraph.
 
 ## 📦 Data Schema (HMDP)
 
