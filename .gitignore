@@ -10,3 +10,13 @@ dist-ssr/
 .gitnexus
 .superpowers/
 .worktrees/
+
+# AI agent / framework config (personal development environment)
+.aidevops.json
+AGENTS.md
+CLAUDE.md
+TODO.md
+.agents/
+.claude/
+.windsurf/
+.ctx/
