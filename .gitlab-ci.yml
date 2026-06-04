@@ -1,0 +1,10 @@
+stages:
+  - verify
+
+verify-job:
+  stage: verify
+  script:
+    - echo "Repository is clean."
+  only:
+    - main
+    - master
