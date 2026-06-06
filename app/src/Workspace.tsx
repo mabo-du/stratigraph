@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, startTransition } from 'react';
 import { useMatrixStore } from './hooks/useMatrixStore';
 import { MatrixCanvas } from './components/MatrixCanvas';
 import type { MatrixCanvasHandle } from './components/MatrixCanvas';
@@ -22,6 +22,8 @@ import { RelationshipType } from './models/hmdp';
 import type { Context, Observation, Phase } from './models/hmdp';
 import type { LayoutPosition } from './models/matrixState';
 import { useConflictToast } from './components/ConflictToast';
+import { loadCurve, calibrateDate } from './utils/calibration';
+import type { CurvePoint } from './utils/calibration';
 
 export interface WorkspaceProps {
   collab: {
@@ -46,13 +48,68 @@ export function Workspace({ collab }: WorkspaceProps) {
   const [publicationMode, setPublicationMode] = useState(false);
   const [publicationTemplate, setPublicationTemplate] = useState<PublicationTemplate>('standard');
   const [heatmapMode, setHeatmapMode] = useState(false);
+  const [timelineMode, setTimelineMode] = useState(false);
   const [show3D, setShow3D] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [curve, setCurve] = useState<CurvePoint[] | null>(null);
+
+  // Load calibration curve for timeline mode
+  useEffect(() => { loadCurve().then(c => setCurve(c)).catch(() => {}); }, []);
 
   // Sync theme to document body
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // ── Timeline mode: compute calibrated Y positions ──────────────────────
+  const [timelinePositions, setTimelinePositions] = useState<Record<string, LayoutPosition>>({});
+  const [timelineAxis, setTimelineAxis] = useState<{ minDate: number; maxDate: number } | null>(null);
+  useEffect(() => {
+    if (!timelineMode || !curve || state.events.length === 0) {
+      if (timelinePositions && Object.keys(timelinePositions).length > 0) {
+        Promise.resolve().then(() => { setTimelinePositions({}); setTimelineAxis(null); });
+      }
+      return;
+    }
+    const c14Events = state.events.filter(e => e.type === 'C14' && e.rDate);
+    if (c14Events.length === 0) return;
+    const contextDates: Record<string, number[]> = {};
+    for (const event of c14Events) {
+      const parts = event.rDate!.split(',').map(s => s.trim());
+      if (parts.length !== 2) continue;
+      const bp = parseInt(parts[0]);
+      const sigma = parseInt(parts[1]);
+      if (isNaN(bp) || isNaN(sigma)) continue;
+      try {
+        const result = calibrateDate(curve, bp, sigma);
+        const ctxId = String(event.contextId);
+        if (!contextDates[ctxId]) contextDates[ctxId] = [];
+        contextDates[ctxId].push(result.median);
+      } catch { /* skip bad dates */ }
+    }
+    if (Object.keys(contextDates).length === 0) return;
+    const allMedians: number[] = [];
+    const avgCtxDate: Record<string, number> = {};
+    for (const [ctxId, medians] of Object.entries(contextDates)) {
+      const avg = medians.reduce((a, b) => a + b, 0) / medians.length;
+      avgCtxDate[ctxId] = avg;
+      allMedians.push(avg);
+    }
+    if (allMedians.length < 2) return;
+    const minDate = Math.min(...allMedians);
+    const maxDate = Math.max(...allMedians);
+    const range = maxDate - minDate || 1;
+    const positions: Record<string, LayoutPosition> = {};
+    for (const [ctxId, avg] of Object.entries(avgCtxDate)) {
+      const y = 750 - ((avg - minDate) / range) * 650;
+      positions[ctxId] = { x: 0, y: Math.round(y) };
+    }
+
+    startTransition(() => {
+      setTimelinePositions(positions);
+      setTimelineAxis({ minDate, maxDate });
+    });
+  }, [timelineMode, curve, state.events]);
 
   // ── Save handler (defined early for keyboard shortcut dependency) ─────
   const handleSave = useCallback(async () => {
@@ -509,6 +566,8 @@ export function Workspace({ collab }: WorkspaceProps) {
         onPublicationTemplateChange={setPublicationTemplate}
         heatmapMode={heatmapMode}
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
+        timelineMode={timelineMode}
+        onToggleTimelineMode={() => setTimelineMode(prev => !prev)}
         show3D={show3D}
         onToggle3D={() => setShow3D(prev => !prev)}
         showDashboard={showDashboard}
@@ -587,6 +646,9 @@ export function Workspace({ collab }: WorkspaceProps) {
             publicationMode={publicationMode}
             publicationTemplate={publicationTemplate}
             heatmapMode={heatmapMode}
+            timelineMode={timelineMode}
+            timelinePositions={timelinePositions}
+            timelineAxis={timelineAxis}
             onNodeSelect={id => dispatch({ type: 'SELECT_CONTEXT', id })}
             onPositionsChange={handlePositionsChange}
             onLayoutComplete={handleLayoutComplete}
