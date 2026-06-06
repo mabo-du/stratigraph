@@ -47,7 +47,7 @@ const AP12_CONFINES = 'AP12';
  * Parse an ArchesDB CIDOC-CRM JSON export into HMDP contexts and observations.
  * Supports both flat JSON arrays and nested resource structures.
  */
-export function parseArchesJson(json: string, _filename?: string): ArchesParseResult {
+export function parseArchesJson(json: string): ArchesParseResult {
   const observations: Observation[] = [];
   const metadata: Record<string, string> = {};
   const warnings: string[] = [];
@@ -202,7 +202,7 @@ function extractPeriod(resource: any): string {
 /** Normalise a string ID: strip URL prefixes, brackets, whitespace */
 function normalizeId(raw: string): string {
   // Strip URL prefix like "http://data.example.com/"
-  const stripped = raw.replace(/^https?:\/\/[^\/]+\//, '')
+  const stripped = raw.replace(/^https?:\/\/[^/]+\//, '')
     .replace(/^\[/, '').replace(/\]$/, '')
     .trim();
   return stripped;

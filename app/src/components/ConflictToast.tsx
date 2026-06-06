@@ -47,12 +47,16 @@ export function ConflictToast({ message, onDismiss, autoHideMs = 8000 }: Conflic
 
 /**
  * Hook to manage conflict toasts.
+ * Uses a monotonically increasing key to force re-mount on each new conflict.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useConflictToast() {
   const [conflict, setConflict] = useState<string | null>(null);
+  const [toastKey, setToastKey] = useState(0);
 
   const showConflict = useCallback((message: string) => {
     setConflict(message);
+    setToastKey(k => k + 1);
   }, []);
 
   const dismissConflict = useCallback(() => {
@@ -65,7 +69,7 @@ export function useConflictToast() {
     dismissConflict,
     toast: conflict ? (
       <ConflictToast
-        key={conflict + Date.now()}
+        key={toastKey}
         message={conflict}
         onDismiss={dismissConflict}
       />

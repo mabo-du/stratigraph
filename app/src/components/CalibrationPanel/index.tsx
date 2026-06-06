@@ -13,11 +13,9 @@ interface CalibrationPanelProps {
 
 export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events, observations }) => {
   const [curve, setCurve] = useState<CurvePoint[] | null>(null);
-  const [curveLoading, setCurveLoading] = useState(true);
   const [curveError, setCurveError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [results, setResults] = useState<Map<string, CalibratedResult | ConstrainedResult>>(new Map());
-  const [calibrating, setCalibrating] = useState(false);
   const [showConstrained, setShowConstrained] = useState(true);
   const [hasConstraints] = useState(() =>
     observations.some(o =>
@@ -25,20 +23,23 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events, obse
     ),
   );
 
+  // Derive loading/calibrating from data state instead of separate booleans
+  const curveLoading = curve === null && curveError === null;
+  const c14Events = events.filter(e => e.type === 'C14' && e.rDate);
+  const calibrating = curve !== null && c14Events.length > 0 && results.size === 0;
+
   // Load curve on mount
   useEffect(() => {
     let cancelled = false;
-    setCurveLoading(true);
     loadCurve()
-      .then(c => { if (!cancelled) { setCurve(c); setCurveLoading(false); } })
-      .catch(e => { if (!cancelled) { setCurveError(String(e)); setCurveLoading(false); } });
+      .then(c => { if (!cancelled) { setCurve(c); } })
+      .catch(e => { if (!cancelled) { setCurveError(String(e)); } });
     return () => { cancelled = true; };
   }, []);
 
   // Auto-calibrate all C14 events when curve is ready
   useEffect(() => {
     if (!curve || events.length === 0) return;
-    setCalibrating(true);
     const newResults = new Map<string, CalibratedResult | ConstrainedResult>();
 
     // Build stratigraphic constraints from observations
@@ -73,7 +74,7 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events, obse
       contextEvents.get(ctxId)!.push(event.id);
     }
 
-    if (dateEvents.size === 0) { setCalibrating(false); return; }
+    if (dateEvents.size === 0) return;
 
     if (constraints.length > 0) {
       // Sequence calibration with constraints
@@ -88,11 +89,9 @@ export const CalibrationPanel: React.FC<CalibrationPanelProps> = ({ events, obse
       }
     }
 
-    setResults(newResults);
-    setCalibrating(false);
+    // Schedule state update outside the synchronous effect body
+    React.startTransition(() => setResults(newResults));
   }, [curve, events, observations]);
-
-  const c14Events = events.filter(e => e.type === 'C14' && e.rDate);
 
   const formatRange = (r: { from: number; to: number }) =>
     `${r.to}–${r.from} cal BP (${r.to > 1950 ? `${1950 - r.to} BC` : `${r.to - 1950} cal AD`} – ${r.from > 1950 ? `${1950 - r.from} BC` : `${r.from - 1950} cal AD`})`;

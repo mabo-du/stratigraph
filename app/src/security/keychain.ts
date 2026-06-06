@@ -96,7 +96,7 @@ export async function storeIdentity(privateKey: Uint8Array, publicKey: Uint8Arra
       } catch (e) {
         console.error('Failed to store identity in Stronghold', e);
         // fallback to IDB below if preferred, but we should strictly rely on stronghold on Desktop
-        throw new Error('Stronghold storage failed');
+        throw new Error('Stronghold storage failed', { cause: e });
       }
     }
   }

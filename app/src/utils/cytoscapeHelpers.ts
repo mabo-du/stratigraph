@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * cytoscapeHelpers.ts — Build Cytoscape element arrays from app state.
  * exports: buildCytoscapeElements, generateCytoscapeStyle, PublicationTemplate

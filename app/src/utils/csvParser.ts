@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * csvParser.ts — Utilities for parsing raw archaeological CSV exports
  * exports: parseCsvFile, applyContextMapping, applyObservationMapping

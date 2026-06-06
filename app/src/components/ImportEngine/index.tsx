@@ -190,7 +190,7 @@ export const ImportEngine: React.FC<ImportEngineProps> = ({ onDataLoaded, onClos
     try {
       setError(null);
       const text = await file.text();
-      const result = parseLstFile(text, file.name);
+      const result = parseLstFile(text);
 
       setLstFileName(file.name);
       setLstResult({

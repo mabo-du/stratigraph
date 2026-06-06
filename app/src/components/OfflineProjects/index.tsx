@@ -22,7 +22,17 @@ export const OfflineProjects: React.FC<OfflineProjectsProps> = ({ onLoadProject,
     setLoading(false);
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await listSavedProjects();
+        if (!cancelled) { setProjects(list); setCount(await getProjectCount()); }
+      } catch { /* silent */ }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleLoad = async (id: string) => {
     const project = await loadProjectOffline(id);

@@ -78,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {sidebarTab === 'units' && (
         selectedContext
           ? <NodeEditor
+              key={selectedContext.id}
               context={selectedContext}
               contexts={contexts}
               observations={observations}
@@ -338,16 +339,6 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
   const [resolvedMediaUrl, setResolvedMediaUrl] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
-  // Reset when context changes
-  React.useEffect(() => {
-    setDesc(context.description ?? '');
-    setType(context.type);
-    setPhase(context.phase ?? '');
-    setPhotoUrl(context.photoUrl ?? '');
-    setMediaRefs(context.mediaRefs ?? []);
-    setIsDirty(false);
-  }, [context.id, context.description, context.type, context.phase, context.photoUrl, context.mediaRefs]);
 
   // Resolve local media URL if available
   React.useEffect(() => {

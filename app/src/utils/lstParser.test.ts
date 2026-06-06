@@ -20,7 +20,7 @@ Date: 2020
 2 3 AB
 3 4 AB`;
 
-    const result = parseLstFile(input, 'test.lst');
+    const result = parseLstFile(input);
 
     expect(result.contexts).toHaveLength(4);
     expect(result.observations).toHaveLength(3);

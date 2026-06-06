@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * fileUtils.ts — Save/load project JSON, export PNG/SVG, export GeoJSON.
  * exports: saveProject, loadProject, loadDemoProject, exportPNG, exportSVGFallback, exportPDF, exportGeoJSON

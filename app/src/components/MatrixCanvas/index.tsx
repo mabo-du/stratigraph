@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * MatrixCanvas/index.tsx — Cytoscape.js graph canvas.
  * Renders the Harris Matrix as a directed acyclic graph (DAG).

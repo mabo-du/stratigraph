@@ -107,7 +107,7 @@ function parseMetaLine(line: string): [string, string] | null {
 
 // ── Main parser ─────────────────────────────────────────────────────────────
 
-export function parseLstFile(content: string, _filename?: string): LstParseResult {
+export function parseLstFile(content: string): LstParseResult {
   const observations: Observation[] = [];
   const metadata: Record<string, string> = {};
   const warnings: string[] = [];
@@ -270,13 +270,14 @@ export function parseLstFile(content: string, _filename?: string): LstParseResul
         break;
       }
 
-      default:
+      default: {
         // Unknown section — try to detect inline metadata
         const inlineMeta = parseMetaLine(trimmed);
         if (inlineMeta && !metadata[inlineMeta[0].toLowerCase()]) {
           metadata[inlineMeta[0].toLowerCase()] = inlineMeta[1];
         }
         break;
+      }
     }
   }
 

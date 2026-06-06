@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * hmdp.ts — Core Harris Matrix Data Package (HMDP) definitions.
  * exports: Context, Observation, DataPackage, RelationshipType, ContextType, Phase

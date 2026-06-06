@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Lightbulb, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { suggestRelationships } from '../../utils/suggestRelationships';
 import type { Suggestion } from '../../utils/suggestRelationships';
@@ -35,18 +35,17 @@ export const RelationshipSuggestions: React.FC<RelationshipSuggestionsProps> = (
   observations,
   onAddObservation,
 }) => {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [expanded, setExpanded] = useState(true);
   const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tooltipId, setTooltipId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const results = suggestRelationships(contexts, observations);
-    setSuggestions(results);
-    // Reset selections when data changes
-    setSelected(new Set());
-  }, [contexts, observations]);
+  // Derive suggestions from contexts + observations instead of effect
+  const suggestions = useMemo(() => suggestRelationships(contexts, observations), [contexts, observations]);
+
+  // Reset selections when data changes — key the list on suggestions version
+  // so React re-mounts the interactive elements with fresh state
+  const suggestionKey = useMemo(() => suggestions.length + '-' + contexts.length + '-' + observations.length, [suggestions, contexts, observations]);
 
   const makeKey = (s: Suggestion, i: number) =>
     `${s.source}|${s.target}|${s.relationshipType}|${i}`;
@@ -170,6 +169,7 @@ export const RelationshipSuggestions: React.FC<RelationshipSuggestionsProps> = (
             </p>
           )}
 
+          <div key={suggestionKey}>
           {suggestions.map((s, i) => {
             const key = makeKey(s, i);
             const accepted = acceptedIds.has(key);
@@ -273,6 +273,7 @@ export const RelationshipSuggestions: React.FC<RelationshipSuggestionsProps> = (
               </div>
             );
           })}
+          </div>
         </div>
       )}
     </div>

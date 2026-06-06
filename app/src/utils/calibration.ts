@@ -61,7 +61,7 @@ export async function loadCurve(): Promise<CurvePoint[]> {
     }));
     return _curveCache!;
   } catch (err) {
-    throw new Error(`Failed to load calibration curve: ${err}`);
+    throw new Error(`Failed to load calibration curve: ${err}`, { cause: err });
   }
 }
 
