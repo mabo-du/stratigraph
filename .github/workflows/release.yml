@@ -12,6 +12,7 @@ jobs:
   # ── Web (GitHub Pages) ──────────────────────────────────────────────────
   publish-web:
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: read
       pages: write
@@ -115,17 +116,10 @@ jobs:
           prerelease: false
           args: --bundles ${{ matrix.bundle }}
 
-      # ── Upload artifact (fallback if tauri-action skips release) ──────
-      - name: Upload bundle as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: stratigraph-${{ github.ref_name }}-${{ matrix.platform }}
-          path: ${{ steps.tauri-build.outputs.artifactPath }}
-          if-no-files-found: warn
-
   # ── Combine release notes ───────────────────────────────────────────────
   create-release:
     needs: [publish-web, build-tauri]
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
