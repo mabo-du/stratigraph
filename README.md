@@ -3,7 +3,7 @@
   <h1>StratiGraph</h1>
   <p><strong>A Modern, AI-Ready Harris Matrix Generator & Digital Heritage Hub</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/version-v1.0.0-4a9e6f" alt="Version">
+    <img src="https://img.shields.io/badge/version-v1.0.2-4a9e6f" alt="Version">
     <img src="https://img.shields.io/badge/license-MIT-2a3a4a" alt="License">
     <img src="https://img.shields.io/badge/TypeScript-React-3178c6" alt="TypeScript React">
     <img src="https://img.shields.io/badge/tests-16%20suites%20136%20passing-4a9e6f" alt="Tests">
@@ -45,6 +45,7 @@ StratiGraph is the central hub of an open-source digital heritage workflow, inte
 *   **Publication Mode:** Disable auto-layout and freely drag, nudge, and lock nodes into pixel-perfect alignment for final PDF publication.
 *   **Finds Density Heatmap:** Switch from sequence mode to heatmap mode — the matrix recolours itself based on find/event density per context.
 *   **Dark Mode:** A seamlessly integrated Dark Mode cascading into the Cytoscape canvas itself.
+*   **Timeline Mode:** Toggle a vertical time axis that projects calibrated C14 dates onto the DAG. Each context's Y position is set from its median cal BP — older contexts at the bottom, younger at the top. The left edge shows a cal BP/BC/AD scale with horizontal gridlines, and phase-coloured bands provide chronological context. Click again to restore the dagre auto-layout.
 *   **CSV Import:** Upload `contexts.csv` and `relationships.csv` files with a visual column mapper supporting 20+ naming convention variants.
 
 ### Real-Time P2P Collaboration

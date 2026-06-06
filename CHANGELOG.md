@@ -10,8 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.2] — 2026-06-06
+
+### Added
+- **Spatiotemporal Phasing (Timeline Mode)** — Toggle a vertical time axis that projects calibrated C14 dates onto the DAG. Each context's Y position is set from its median cal BP (IntCal20, in-browser). Left-edge SVG axis shows cal BP/BC/AD ticks with horizontal gridlines; phase-coloured bands provide chronological context. Exits cleanly without disturbing saved positions.
+
+## [1.0.1] — 2026-06-06
+
 ### Fixed
-- **noble-ed25519 v3 API compatibility** — Updated crypto layer to use `ed.hashes.sha512` instead of the deprecated `ed.etc.sha512Sync` (frozen in v3.1.0). All 136 tests pass.
+- **noble-ed25519 v3 API compatibility** — Updated crypto layer to use `ed.hashes.sha512` instead of the deprecated `ed.etc.sha512Sync` (frozen in v3.1.0).
+- **13 lint errors cleaned** — setState-in-effect refactored to derived state, missing error causes chained, unused vars/imports removed.
+- **Documentation** — README, CHANGELOG, and AGENTS.md refreshed for v1.0.0 release state. User-specific paths removed from ecosystem table.
 
 ## [1.0.0] — 2026-06-06
 
@@ -54,5 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Trowel** — Shared context data model; Trowel consumes StratiGraph EEDP outputs for deterministic report drafting.
 - **Libby** — OxCal CQL export for Bayesian radiocarbon calibration.
 
-[unreleased]: https://github.com/mabo-du/stratigraph/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/mabo-du/stratigraph/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.2
+[1.0.1]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.1
 [1.0.0]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.0
