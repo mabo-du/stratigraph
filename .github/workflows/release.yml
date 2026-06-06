@@ -101,10 +101,11 @@ jobs:
       - run: npm ci
         working-directory: ./
 
-      # Ensure platform-specific Tauri CLI binary is installed
-      # (npm ci via workspaces may skip optional platform deps)
-      - name: Install Tauri CLI for current platform
-        run: npm install @tauri-apps/cli
+      # npm ci via workspaces skips optional platform binaries
+      # (e.g. @rollup/rollup-win32-x64-msvc, @tauri-apps/cli-win32-x64-msvc)
+      # Re-run in the workspace to resolve platform-specific optional deps
+      - name: Install platform-specific optional dependencies
+        run: npm install
         working-directory: ./app
 
       # ── Build ─────────────────────────────────────────────────────────
