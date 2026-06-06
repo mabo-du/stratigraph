@@ -23,9 +23,8 @@ import * as ed from '@noble/ed25519';
 import { sha512, sha256 } from '@noble/hashes/sha2.js';
 import { hkdf } from '@noble/hashes/hkdf.js';
 
-// noble-ed25519 requires sha512 globally available for sync operations
-// @ts-ignore
-ed.etc.sha512Sync = (...m: Uint8Array[]) => sha512(ed.etc.concatBytes(...m));
+// noble-ed25519 v3 uses ed.hashes.sha512 for sync operations (not ed.etc.sha512Sync as in v2)
+ed.hashes.sha512 = sha512;
 
 /**
  * Generate a new Ed25519 keypair for device identity.
