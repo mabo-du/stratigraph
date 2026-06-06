@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+### Fixed
+- **noble-ed25519 v3 API compatibility** — Updated crypto layer to use `ed.hashes.sha512` instead of the deprecated `ed.etc.sha512Sync` (frozen in v3.1.0). All 136 tests pass.
+
 ## [1.0.0] — 2026-06-06
 
 ### Added
