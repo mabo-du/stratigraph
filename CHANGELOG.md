@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.3] — 2026-06-06
+
+### Added
+- **Paleo-Coastline Mapping (t034)** — New "Paleo" toggle in the toolbar opens a panel with a time slider (0–26 ka BP). Fetches ancient coastline data from the GPlates Web Service and renders a self-contained SVG preview map showing site contexts relative to sea level. Displays submergence status for each time slice.
+
 ## [1.0.2] — 2026-06-06
 
 ### Added

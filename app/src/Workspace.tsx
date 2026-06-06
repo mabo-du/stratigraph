@@ -24,6 +24,7 @@ import type { LayoutPosition } from './models/matrixState';
 import { useConflictToast } from './components/ConflictToast';
 import { loadCurve, calibrateDate } from './utils/calibration';
 import type { CurvePoint } from './utils/calibration';
+import { PaleoPanel } from './components/PaleoPanel';
 
 export interface WorkspaceProps {
   collab: {
@@ -50,6 +51,7 @@ export function Workspace({ collab }: WorkspaceProps) {
   const [heatmapMode, setHeatmapMode] = useState(false);
   const [timelineMode, setTimelineMode] = useState(false);
   const [show3D, setShow3D] = useState(false);
+  const [showPaleo, setShowPaleo] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [curve, setCurve] = useState<CurvePoint[] | null>(null);
 
@@ -568,6 +570,8 @@ export function Workspace({ collab }: WorkspaceProps) {
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
         timelineMode={timelineMode}
         onToggleTimelineMode={() => setTimelineMode(prev => !prev)}
+        showPaleo={showPaleo}
+        onTogglePaleo={() => setShowPaleo(prev => !prev)}
         show3D={show3D}
         onToggle3D={() => setShow3D(prev => !prev)}
         showDashboard={showDashboard}
@@ -704,6 +708,12 @@ export function Workspace({ collab }: WorkspaceProps) {
           }}
         />
       )}
+
+      <PaleoPanel
+        open={showPaleo}
+        onClose={() => setShowPaleo(false)}
+        contexts={state.contexts}
+      />
     </div>
   );
 }

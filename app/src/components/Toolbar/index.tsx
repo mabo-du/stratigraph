@@ -6,7 +6,7 @@ import React, { useRef, useState } from 'react';
 import {
   Undo2, Redo2, LayoutDashboard, Upload, Save, FolderOpen,
   Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun, 
-  Grid3X3, Flame, FileText, HardDrive, Timer
+  Grid3X3, Flame, FileText, HardDrive, Timer, Globe
 } from 'lucide-react';
 import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
 import type { SyncStatus } from '@stratigraph/sync';
@@ -63,6 +63,8 @@ interface ToolbarProps {
   onToggleHeatmapMode: () => void;
   timelineMode: boolean;
   onToggleTimelineMode: () => void;
+  showPaleo: boolean;
+  onTogglePaleo: () => void;
   show3D: boolean;
   onToggle3D: () => void;
   showDashboard?: boolean;
@@ -117,6 +119,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleHeatmapMode,
   timelineMode,
   onToggleTimelineMode,
+  showPaleo,
+  onTogglePaleo,
   show3D,
   onToggle3D,
   showDashboard,
@@ -346,6 +350,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             title="Toggle Timeline Mode (Bayesian Spatiotemporal Axis)"
           >
             <Timer size={15} />
+          </button>
+          <button
+            className={`tb-btn ${showPaleo ? 'tb-btn--accent' : ''}`}
+            onClick={onTogglePaleo}
+            title="Toggle Paleo-Coastline Map (GPlates)"
+          >
+            <Globe size={15} />
           </button>
           <button className="tb-btn" onClick={onToggleTheme} title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}>
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
