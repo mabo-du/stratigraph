@@ -8,19 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **P2P Collaboration** — Real-time peer-to-peer sync over WebRTC with Yjs CRDTs.
-- **Local Network Discovery** — Auto-discovery of peers via mDNS (Tauri desktop).
-- **Offline Media Management** — Hybrid SQLite (Tauri) and IndexedDB (Web) storage for attaching local photos/finds to contexts.
-- **GeoJSON Export** — Export contexts with spatial coordinates to standard GeoJSON (EPSG:4326/3857).
-- **ArchesDB Export** — One-way export to CIDOC-CRM compliant JSON.
-- **Legacy Import** — Support for importing classic `.LST` (ArchEd/BASP) files.
-- **Binary Support** — Upgraded Tauri bridge to natively handle `Uint8Array` payloads for seamless offline media.
+- No unreleased changes yet.
 
-### Changed
-- Migrated core state from `useReducer` to `Y.Doc` for distributed consensus.
-- Refactored `Workspace` component to coordinate `MatrixStore` state and UI.
-
-## [1.0.0] — 2026-05-29
+## [1.0.0] — 2026-06-06
 
 ### Added
 
@@ -43,7 +33,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Search Overlay** — Ctrl+F palette with keyboard navigation, auto-focus, and canvas highlighting.
 - **Save/Load** — Portable `.hmatrix.json` files with all project state.
 - **Schema Contract** — `schemas/context-sheet-v1.json` shared between HOARD and StratiGraph.
-- **Test Suite** — 6 test files (graphLogic, csvParser, cytoscapeHelpers, hoardImporter, hoardExport, bayesianLogic) all passing.
+- **Tauri v2 Desktop** — Native desktop builds for Linux (.deb), macOS (.dmg), Windows (.exe) with Rust backend and WebView frontend.
+- **P2P Collaboration** — Real-time peer-to-peer sync over WebRTC with Yjs CRDTs. Cryptographic identity via Ed25519 signatures.
+- **Local Network Discovery** — Auto-discovery of peers via mDNS (Tauri desktop).
+- **Offline Storage** — IndexedDB-backed project persistence with service worker for offline web use.
+- **GeoJSON Export** — Export contexts with spatial coordinates to standard GeoJSON (EPSG:4326/3857).
+- **ArchesDB Export** — One-way export to CIDOC-CRM compliant JSON.
+- **Legacy Import** — Support for importing classic `.LST` (ArchEd/BASP) files.
+- **3D Model Integration** — Three.js photogrammetry model display on nodes.
+- **Test Suite** — 16 test files (136 tests) covering all modules.
+- **Release Pipeline** — CI/CD via GitHub Actions: cross-platform builds, PyPI trusted publishing for sync package.
 - **Research Library** — Companion `docs/research-papers/` with 4 deep-research papers covering Harris Matrix conventions, user needs, and architectural synthesis.
 
 ### Ecosystem
@@ -52,5 +51,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Trowel** — Shared context data model; Trowel consumes StratiGraph EEDP outputs for deterministic report drafting.
 - **Libby** — OxCal CQL export for Bayesian radiocarbon calibration.
 
-[unreleased]: https://github.com/strati-graph/stratigraph/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/strati-graph/stratigraph/releases/tag/v1.0.0
+[unreleased]: https://github.com/mabo-du/stratigraph/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.0

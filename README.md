@@ -3,10 +3,14 @@
   <h1>StratiGraph</h1>
   <p><strong>A Modern, AI-Ready Harris Matrix Generator & Digital Heritage Hub</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/status-v2%20complete-4a9e6f" alt="Status">
+    <img src="https://img.shields.io/badge/version-v1.0.0-4a9e6f" alt="Version">
     <img src="https://img.shields.io/badge/license-MIT-2a3a4a" alt="License">
     <img src="https://img.shields.io/badge/TypeScript-React-3178c6" alt="TypeScript React">
-    <img src="https://img.shields.io/badge/tests-6%20suites%20all%20passing-4a9e6f" alt="Tests">
+    <img src="https://img.shields.io/badge/tests-16%20suites%20136%20passing-4a9e6f" alt="Tests">
+    <img src="https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-6a5acd" alt="Platforms">
+  </p>
+  <p>
+    <a href="https://github.com/mabo-du/stratigraph/releases/latest"><strong>⬇ Download StratiGraph</strong></a>
   </p>
 </div>
 
@@ -15,49 +19,43 @@
 <div align="center">
   <img src="assets/features.gif" alt="StratiGraph Feature Tour — DAG engine, heatmap, publication mode, CSV import, themes, and ecosystem integration" width="800" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
   <br>
-  <sub>✦ Feature tour: DAG engine · Finds heatmap · Publication mode · CSV import · Dark/Light themes · Ecosystem</sub>
+  <sub>Feature tour: DAG engine · Finds heatmap · Publication mode · CSV import · Dark/Light themes · Ecosystem</sub>
 </div>
 
-StratiGraph is a premium, entirely browser-based tool designed for archaeologists to visually construct, validate, and export stratigraphic sequences (Harris Matrices) — the directed acyclic graphs used in every stratigraphic excavation. Unlike legacy software, StratiGraph seamlessly integrates modern data visualization with Bayesian geochronology, GIS interoperability, and Artificial Intelligence readiness.
+StratiGraph is an open-source, cross-platform desktop application for archaeologists to visually construct, validate, and export Harris Matrices — the directed acyclic graphs used to model stratigraphic relationships in every excavation. It runs entirely offline with zero backend dependency, keeping your field data private and secure.
 
-**Current status:** v2 complete & Zero-Infrastructure Architecture deployed — Real-time WebRTC CRDT collaboration, OS Hardened Tauri Desktop App (Windows/macOS native firewall exceptions), Zero-Trust cryptographic identity, CAS Binary Sync, 3D Photogrammetry model integration, GeoJSON/ArchesDB export, core DAG engine, HOARD AI import/export, Libby/OxCal Bayesian export, full UI with dark/light mode, and exports to PNG/SVG/PDF. See [AGENTS.md](AGENTS.md) for architecture and quick start.
+**Downloads available for Linux (.deb), macOS (.dmg), and Windows (.exe) — see the [latest release](https://github.com/mabo-du/stratigraph/releases/latest).**
 
-## 🚀 Key Features
+## Key Features
 
-### 1. Robust DAG Topology Engine
-Construct massive matrices with confidence. The underlying engine utilizes the **Dye & Buck (1987) algorithm** to automatically perform transitive reduction, ensuring that mathematically redundant physical relationships are pruned, resulting in perfectly valid, physically sound stratigraphic directed acyclic graphs (DAGs).
+### DAG Topology Engine
+Construct massive matrices with confidence. The engine uses the **Dye & Buck (1987) algorithm** for automatic transitive reduction, pruning mathematically redundant relationships to produce valid, physically sound stratigraphic directed acyclic graphs. Cycle detection via DFS runs on every relationship addition.
 
-### 2. Digital Heritage Ecosystem Integration
-StratiGraph is the central hub of a comprehensive open-source digital heritage workflow, cleanly interoperating with every phase of the post-excavation pipeline:
+### Digital Heritage Ecosystem Integration
+StratiGraph is the central hub of an open-source digital heritage workflow, interoperating with every phase of the post-excavation pipeline:
 
-| Project | Repository | Role | StratiGraph Integration |
-|---------|-----------|------|------------------------|
-| **HOARD** | `~/Projects/HOARD` | AI context-sheet digitisation (Phases 0-5) | **Import:** Directly loads Phase 1 `ctx_sheet_*.json` via shared `schemas/context-sheet-v1.json` contract. **Export:** Produces EEDP path files for hallucination-free AI report generation. |
-| **Trowel** | `~/Projects/trowel` | Compliance report drafting from field data | **Bi-directional:** Shares context data model. Trowel consumes StratiGraph's EEDP exports for deterministic stratigraphic narrative generation. Both share `cuts`/`fills`/`same_as` relationship fields. |
-| **Libby** | `~/Projects/Libby` | Bayesian radiocarbon calibration | **Export:** Upload `events.csv`, get a fully structured `OxCal CQL` script with transitively reduced stratigraphic constraints for MCMC modelling. |
-| **ArchesDB** | | Heritage Inventory System | **Export:** One-way JSON export conforming to CIDOC-CRM `A8_Stratigraphic_Unit` and relationships. |
-| **Paleo** | `~/Projects/Paleo` | Palaeontology AI platform | **Research:** Paleo-coastline data research conducted for palaeoenvironmental reconstruction integration (see `docs/research-papers/`). |
-| **Dibble** | `~/Projects/dibble` | Lithic analysis | **Ecosystem:** Shares the broader vision of connected digital heritage tools. |
+| Project | Role | StratiGraph Integration |
+|---------|------|------------------------|
+| **HOARD** | AI context-sheet digitisation (Phases 0-5) | Imports Phase 1 `ctx_sheet_*.json` files. Exports EEDP paths for hallucination-free AI report generation. |
+| **Trowel** | Compliance report drafting from field data | Bi-directional: Trowel consumes EEDP exports for deterministic stratigraphic narrative generation. |
+| **Libby** | Bayesian radiocarbon calibration | Exports `OxCal CQL` scripts with transitively reduced stratigraphic constraints for MCMC modelling. |
+| **Dibble** | 3D lithic morphological analysis | Shares the broader vision of connected digital heritage tools. |
 
-### 3. Premium UI & Data Visualization
-Academics deserve nice things. StratiGraph features a highly polished user experience:
-*   **WYSIWYG Publication Mode:** Disable the auto-layout grid and freely drag, nudge, and lock nodes into pixel-perfect alignment for your final PDF publication.
-*   **Finds Density Heatmap:** Instantly switch the graph from sequence mode to heatmap mode. The matrix dynamically recolors itself based on the density of events/finds associated with each context.
-*   **Late-Night Dark Mode:** A seamlessly integrated Dark Mode that cascades beautifully into the Cytoscape canvas itself.
-*   **Frictionless CSV Imports:** Upload standard `contexts.csv` and `relationships.csv` files with a robust, visual column mapper.
+### Premium UI & Data Visualization
+*   **Publication Mode:** Disable auto-layout and freely drag, nudge, and lock nodes into pixel-perfect alignment for final PDF publication.
+*   **Finds Density Heatmap:** Switch from sequence mode to heatmap mode — the matrix recolours itself based on find/event density per context.
+*   **Dark Mode:** A seamlessly integrated Dark Mode cascading into the Cytoscape canvas itself.
+*   **CSV Import:** Upload `contexts.csv` and `relationships.csv` files with a visual column mapper supporting 20+ naming convention variants.
 
-### 4. Zero-Trust P2P Architecture (v2 completed)
-StratiGraph uses WebRTC, CRDTs (Yjs), and an mDNS daemon within a Tauri native wrapper to enable real-time, offline graph editing. Cryptographic identity is enforced by Ed25519 signatures, preventing rogue edits in remote field conditions, and the native wrapper dynamically handles strict OS-level firewalls (Windows Defender `Profile="private"` exceptions and macOS TCC rules).
+### Real-Time P2P Collaboration
+WebRTC-based peer-to-peer sync using Yjs CRDTs with cryptographic identity enforcement via Ed25519 signatures. The native desktop wrapper handles firewall integration (Windows Defender, macOS TCC). Discover peers on your local network via mDNS — no server, no cloud, no sign-up.
 
-## 🔮 Future v3 Roadmap
-We are actively researching the following major architectural expansions:
-1. **Semantic Graph RAG:** Translating the HMDP DAG into formal CIDOC-CRM triples via an in-browser Oxigraph WASM database for LLM graph-retrieval interactions.
-2. **Spatiotemporal Geochronology:** Projecting nodes onto an absolute vertical time axis using Aoristic probability distributions imported directly from our Bayesian modelling engine (Libby).
-3. **Pleistocene Paleo-Coastline Mapping:** Fetching ICE-7G_NA NetCDF data from the `Paleo` API sidecar to adjust GIS map base layers for ancient sea-levels natively within StratiGraph.
+### Cross-Platform Desktop
+Native installers for Linux, macOS, and Windows built with Tauri v2. The app runs as a self-contained desktop application with native file dialogs, offline storage, and OS-level integration.
 
-## 📦 Data Schema (HMDP)
+## Data Schema (HMDP)
 
-StratiGraph is built upon the open-source **Harris Matrix Data Package (HMDP)** schema, ensuring your data remains entirely interoperable and future-proof.
+StratiGraph uses the open **Harris Matrix Data Package (HMDP)** schema, ensuring your data is portable and interoperable:
 
 ```json
 {
@@ -77,57 +75,65 @@ StratiGraph is built upon the open-source **Harris Matrix Data Package (HMDP)** 
 }
 ```
 
-## 🛠️ Tech Stack
-*   **React + TypeScript**
-*   **Vite** (Lightning-fast client-side builds)
-*   **Cytoscape.js & Dagre** (Graph rendering and layouting)
-*   **Frictionless Data** (Standardised CSV parsing and schema validation)
+## Tech Stack
 
-## 💻 Running Locally
+*   **React + TypeScript** with Vite
+*   **Cytoscape.js & Dagre** for graph rendering and Sugiyama layout
+*   **Tauri v2** for native desktop builds (Rust backend, WebView frontend)
+*   **Yjs (CRDTs) + WebRTC** for real-time peer-to-peer collaboration
+*   **Frictionless Data** for standardised CSV parsing and schema validation
 
-StratiGraph requires absolutely no backend infrastructure. It runs entirely within your browser for maximum security and data privacy.
+## Install
+
+### Desktop (recommended)
+Download the installer for your platform from the [latest release](https://github.com/mabo-du/stratigraph/releases/latest):
+
+| Platform | Format |
+|----------|--------|
+| Linux | `.deb` package |
+| macOS | `.dmg` disk image (Apple Silicon) |
+| Windows | `.exe` NSIS installer |
+
+### Web (development)
+StratiGraph can also run entirely in your browser with no backend:
 
 ```bash
-git clone https://github.com/strati-graph/stratigraph.git
+git clone https://github.com/mabo-du/stratigraph.git
 cd stratigraph/app
 npm install
 npm run dev
 ```
 
-Navigate to `http://localhost:5173` to start building your matrix.
+Navigate to `http://localhost:5173`.
+
+### Desktop development
+Build and run the Tauri desktop wrapper locally:
+
+```bash
+cd app
+npm run tauri:dev     # Hot-reload development
+npm run tauri:build   # Production build (.deb/.dmg/.exe)
+```
+
+## Ecosystem Workflows
 
 ### Importing from HOARD
-
-1. **Run HOARD Phase 1** to digitise your context sheets → `ctx_sheet_*.json` files
-2. In StratiGraph, click **Import** → select the **HOARD JSON Import** tab
-3. Multi-select all JSON files (hold Shift or Ctrl)
+1. Run HOARD Phase 1 to digitise your context sheets → `ctx_sheet_*.json` files
+2. In StratiGraph, click **Import** → **HOARD JSON Import**
+3. Multi-select all JSON files
 4. Review the summary and click **Generate Harris Matrix**
-5. Stratigraphic edges are auto-inferred from relationship fields; stub contexts created for cross-references
-
-### Exporting to Trowel (Report Drafting)
-
-1. Click **Export** → **HOARD Payload (.json)** to generate EEDP linearised paths
-2. Open **Trowel** → import the EEDP JSON file
-3. Trowel generates a deterministic stratigraphic narrative — no topological hallucinations
+5. Stratigraphic edges are auto-inferred from relationship fields
 
 ### Exporting to Libby (Bayesian Modelling)
-
-1. Import or create contexts with radiocarbon events (via CSV Events tab or manual entry)
+1. Import or create contexts with radiocarbon events
 2. Click **Export** → **Export for Libby (.oxcal)**
-3. The generated CQL script includes transitively reduced constraints and can be loaded into OxCal or Libby
+3. Load the generated CQL script into OxCal or Libby for MCMC calibration
 
-## 📚 Research Library
+### Exporting for Publication
+* **PNG/SVG/PDF** — Publication-ready exports at 2× resolution
+* **GeoJSON** — Contexts with spatial coordinates for GIS/QGIS integration
+* **ArchesDB JSON** — CIDOC-CRM compliant heritage inventory format
 
-The companion research repository at `~/Projects/Digital-Heritage-Research/` contains **160 deep-research papers, 388 reusable prompts, and 58 project scopes** covering the full digital heritage ecosystem:
+## License
 
-| Directory | Contents |
-|-----------|----------|
-| `research-papers/` | Technical deep-dives on every component — Harris Matrix conventions, Bayesian modelling, field system schemas, graph layout algorithms, GIS integration |
-| `research-prompts/` | Copy-paste prompts for development, research, and architecture design |
-| `project-scopes/` | Full implementation plans for StratiGraph, HOARD, Libby, Paleo, Trowel, and 20+ other projects |
-
-StratiGraph-specific papers:
-- `Harris Matrix Generator Research Scope.md` — Comprehensive 100+ citation technical deep-dive
-- `ChatGPT-research-report.md` — User pain points and feature requests from practitioner surveys
-- `Digital Archaeology Research Expansion.md` — "Holy Trinity" architectural synthesis
-- `Stratigraph Paleo Coastline Data Research.md` — Linked palaeoenvironmental research
+MIT — see [LICENSE](LICENSE) for details.
