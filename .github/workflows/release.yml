@@ -101,6 +101,12 @@ jobs:
       - run: npm ci
         working-directory: ./
 
+      # Ensure platform-specific Tauri CLI binary is installed
+      # (npm ci via workspaces may skip optional platform deps)
+      - name: Install Tauri CLI for current platform
+        run: npm install @tauri-apps/cli
+        working-directory: ./app
+
       # ── Build ─────────────────────────────────────────────────────────
       - name: Tauri build
         uses: tauri-apps/tauri-action@v0
