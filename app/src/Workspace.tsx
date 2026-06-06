@@ -25,7 +25,6 @@ import { useConflictToast } from './components/ConflictToast';
 import { loadCurve, calibrateDate } from './utils/calibration';
 import type { CurvePoint } from './utils/calibration';
 import { PaleoPanel } from './components/PaleoPanel';
-
 export interface WorkspaceProps {
   collab: {
     isConnected: boolean;
@@ -54,6 +53,7 @@ export function Workspace({ collab }: WorkspaceProps) {
   const [showPaleo, setShowPaleo] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [curve, setCurve] = useState<CurvePoint[] | null>(null);
+  const [showRag, setShowRag] = useState(false);
 
   // Load calibration curve for timeline mode
   useEffect(() => { loadCurve().then(c => setCurve(c)).catch(() => {}); }, []);
@@ -570,8 +570,6 @@ export function Workspace({ collab }: WorkspaceProps) {
         onToggleHeatmapMode={() => setHeatmapMode(prev => !prev)}
         timelineMode={timelineMode}
         onToggleTimelineMode={() => setTimelineMode(prev => !prev)}
-        showPaleo={showPaleo}
-        onTogglePaleo={() => setShowPaleo(prev => !prev)}
         show3D={show3D}
         onToggle3D={() => setShow3D(prev => !prev)}
         showDashboard={showDashboard}
@@ -588,6 +586,10 @@ export function Workspace({ collab }: WorkspaceProps) {
         collabShareableLink={collab.shareableLink}
         onStartSession={collab.startSession}
         onLeaveSession={collab.leaveSession}
+        showPaleo={showPaleo}
+        onTogglePaleo={() => setShowPaleo(prev => !prev)}
+        showRag={showRag}
+        onToggleRag={() => setShowRag(prev => !prev)}
       />
       {conflictToast}
       <input ref={loadInputRef}
@@ -708,7 +710,6 @@ export function Workspace({ collab }: WorkspaceProps) {
           }}
         />
       )}
-
       <PaleoPanel
         open={showPaleo}
         onClose={() => setShowPaleo(false)}

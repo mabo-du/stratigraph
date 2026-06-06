@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.4] — 2026-06-07
+
+### Added
+- **Semantic Graph RAG (t032)** — New "RAG" toggle opens a SPARQL query panel. Builds an in-browser CIDOC-CRM triple store from HMDP data using Oxigraph WASM. Pre-built query templates (all contexts, relationships, phases, C14 dates), custom SPARQL editor, results table, Turtle export for LLM ingestion. No backend, no API key.
+
 ## [1.0.3] — 2026-06-06
 
 ### Added
-- **Paleo-Coastline Mapping (t034)** — New "Paleo" toggle in the toolbar opens a panel with a time slider (0–26 ka BP). Fetches ancient coastline data from the GPlates Web Service and renders a self-contained SVG preview map showing site contexts relative to sea level. Displays submergence status for each time slice.
+- **Paleo-Coastline Mapping (t034)** — New "Paleo" toggle opens a panel with time slider (0-26 ka BP). Fetches ancient coastline data from GPlates Web Service, renders SVG preview map with site contexts and submergence status.
 
 ## [1.0.2] — 2026-06-06
 

@@ -29,6 +29,7 @@
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",
+    "oxigraph": "^0.5.8",
     "papaparse": "^5.5.3",
     "proj4": "^2.20.8",
     "qrcode": "^1.5.4",
