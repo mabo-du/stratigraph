@@ -59,6 +59,9 @@ interface MatrixCanvasProps {
   publicationMode: boolean;
   publicationTemplate: PublicationTemplate;
   heatmapMode: boolean;
+  timelineMode: boolean;
+  timelinePositions: Record<string, LayoutPosition>;
+  timelineAxis: { minDate: number; maxDate: number } | null;
   dataVersion: number;
   onNodeSelect: (id: string | null) => void;
   onPositionsChange: (positions: Record<string, LayoutPosition>) => void;
@@ -219,25 +222,43 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
 
       if (props.contexts.length === 0) return;
 
-      if (hasPositions) {
-        // Restore saved positions
+      if (props.timelineMode && Object.keys(props.timelinePositions).length > 0) {
+        if (hasPositions) {
+          cy.nodes().forEach(n => {
+            const savedPos = props.positions[n.id()];
+            const tPos = props.timelinePositions[n.id()];
+            if (savedPos && tPos) n.position({ x: savedPos.x, y: tPos.y });
+            else if (savedPos) n.position(savedPos);
+          });
+          cy.fit(undefined, 50);
+        } else {
+          const layout = cy.layout(DAGRE_OPTIONS as any);
+          layout.on('layoutstop', () => {
+            for (const [id, tPos] of Object.entries(props.timelinePositions)) {
+              const el = cy.getElementById(id);
+              if (el.length) el.position({ x: el.position('x'), y: tPos.y });
+            }
+            cy.fit(undefined, 50);
+          });
+          layout.run();
+        }
+      } else if (hasPositions) {
         cy.nodes().forEach(n => {
           const pos = props.positions[n.id()];
           if (pos) n.position({ x: pos.x, y: pos.y });
         });
         cy.fit(undefined, 50);
       } else if (!props.publicationMode) {
-        // No positions yet — auto-layout (unless we are in publication mode)
         runLayout(cy, pos => onLayoutCompleteRef.current(pos));
       }
     }, [
       props.dataVersion,
       props.showPhaseGroups,
       props.heatmapMode,
+      props.timelineMode,
+      props.timelinePositions,
       props.events,
       resolvedMediaUrls,
-      // positions deliberately NOT included here: they're applied above only on init
-      // and updated separately via dragfree events
     ]);
 
     // ── Sync node phase colours when phases, heatmap, or template changes ──
@@ -413,6 +434,43 @@ export const MatrixCanvas = forwardRef<MatrixCanvasHandle, MatrixCanvasProps>(
               Contemporary
             </div>
           </div>
+        )}
+
+        {/* Timeline axis overlay */}
+        {props.timelineMode && props.timelineAxis && (
+          <svg
+            style={{
+              position: 'absolute', left: 0, top: 0, width: 52, height: '100%',
+              zIndex: 3, pointerEvents: 'none', overflow: 'visible',
+            }}
+          >
+            <rect x="0" y="0" width="52" height="100%" fill="var(--surface)" opacity="0.95" rx="0" />
+            <line x1="50" y1="0" x2="50" y2="100%" stroke="var(--border-1)" strokeWidth="1" />
+            {(function() {
+              const { minDate, maxDate } = props.timelineAxis!;
+              const range = maxDate - minDate || 1;
+              const ticks = 5;
+              const elements: React.JSX.Element[] = [];
+              for (let i = 0; i <= ticks; i++) {
+                const val = maxDate - (range * i / ticks);
+                const y = Math.round(100 + (range - (val - minDate)) / range * 650);
+                const label = val >= 1950 ? `${1950 - Math.round(val)} BC` : `${Math.round(val) - 1950} AD`;
+                elements.push(
+                  <g key={i}>
+                    <line x1="44" y1={y} x2="56" y2={y} stroke="var(--text-3)" strokeWidth="1" />
+                    <line x1="52" y1={y} x2="100%" y2={y} stroke="var(--border-1)" strokeWidth="0.5" opacity="0.3" />
+                    <text x="42" y={y + 3} textAnchor="end" fill="var(--text-2)" fontSize="9" fontFamily="monospace">
+                      {label}
+                    </text>
+                  </g>
+                );
+              }
+              return elements;
+            })()}
+            <text x="8" y="14" fill="var(--text-3)" fontSize="9" fontFamily="sans-serif" fontWeight="600">
+              cal BP
+            </text>
+          </svg>
         )}
       </div>
     );

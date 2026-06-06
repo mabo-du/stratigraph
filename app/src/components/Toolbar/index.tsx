@@ -6,7 +6,7 @@ import React, { useRef, useState } from 'react';
 import {
   Undo2, Redo2, LayoutDashboard, Upload, Save, FolderOpen,
   Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun, 
-  Grid3X3, Flame, FileText, HardDrive
+  Grid3X3, Flame, FileText, HardDrive, Timer
 } from 'lucide-react';
 import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
 import type { SyncStatus } from '@stratigraph/sync';
@@ -61,6 +61,8 @@ interface ToolbarProps {
   onPublicationTemplateChange: (t: PublicationTemplate) => void;
   heatmapMode: boolean;
   onToggleHeatmapMode: () => void;
+  timelineMode: boolean;
+  onToggleTimelineMode: () => void;
   show3D: boolean;
   onToggle3D: () => void;
   showDashboard?: boolean;
@@ -113,6 +115,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onPublicationTemplateChange,
   heatmapMode,
   onToggleHeatmapMode,
+  timelineMode,
+  onToggleTimelineMode,
   show3D,
   onToggle3D,
   showDashboard,
@@ -334,6 +338,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             title="Toggle Heatmap Mode (Finds Density)"
           >
             <Flame size={15} />
+          </button>
+          <button
+            className={`tb-btn ${timelineMode ? 'tb-btn--accent' : ''}`}
+            onClick={onToggleTimelineMode}
+            disabled={contextCount === 0}
+            title="Toggle Timeline Mode (Bayesian Spatiotemporal Axis)"
+          >
+            <Timer size={15} />
           </button>
           <button className="tb-btn" onClick={onToggleTheme} title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}>
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
