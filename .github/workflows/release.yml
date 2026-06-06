@@ -102,11 +102,15 @@ jobs:
         working-directory: ./
 
       # Workaround for npm workspaces bug #4828: optional platform binaries
-      # (cli-win32-x64-msvc, rollup-win32-x64-msvc) are not hoisted correctly.
-      # Re-installing the app workspace with --install-strategy=nested ensures
-      # each platform-specific optional dep lands in the right node_modules.
-      - name: Install platform-specific CLI dependencies
-        run: npm ci --install-strategy=nested --workspace=app
+      # for @tauri-apps/cli and rollup are skipped during hoisted installs.
+      # Install them explicitly per-platform so the native bindings resolve.
+      - name: Install Windows platform dependencies
+        if: runner.os == 'Windows'
+        run: npm install --no-save @tauri-apps/cli-win32-x64-msvc @rollup/rollup-win32-x64-msvc
+        working-directory: ./
+      - name: Install macOS platform dependencies
+        if: runner.os == 'macOS'
+        run: npm install --no-save @tauri-apps/cli-darwin-arm64 @rollup/rollup-darwin-arm64
         working-directory: ./
 
       # ── Build ─────────────────────────────────────────────────────────
