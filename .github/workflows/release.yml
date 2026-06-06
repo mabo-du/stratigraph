@@ -5,19 +5,136 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
-  release:
+  # ── Web (GitHub Pages) ──────────────────────────────────────────────────
+  publish-web:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './app/package-lock.json'
+
+      - run: npm ci
+        working-directory: ./app
+
+      - run: npm run build
+        working-directory: ./app
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: './app/dist'
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ── Desktop (Tauri builds) ──────────────────────────────────────────────
+  build-tauri:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundle: deb
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundle: msi
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            bundle: dmg
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Rust ──────────────────────────────────────────────────────────
+      - name: Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+
+      # ── Node ──────────────────────────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './app/package-lock.json'
+
+      - run: npm ci
+        working-directory: ./app
+
+      # ── Linux system deps ─────────────────────────────────────────────
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev
+
+      # ── Build ─────────────────────────────────────────────────────────
+      - name: Tauri build
+        uses: tauri-apps/tauri-action@v2
+        id: tauri-build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: app
+          tagName: ${{ github.ref_name }}
+          releaseName: 'StratiGraph ${{ github.ref_name }}'
+          releaseBody: 'See the assets below to download and install StratiGraph.'
+          releaseDraft: true
+          prerelease: false
+          args: --bundles ${{ matrix.bundle }}
+
+      # ── Upload artifact (fallback if tauri-action skips release) ──────
+      - name: Upload bundle as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stratigraph-${{ github.ref_name }}-${{ matrix.platform }}
+          path: ${{ steps.tauri-build.outputs.artifactPath }}
+          if-no-files-found: warn
+
+  # ── Combine release notes ───────────────────────────────────────────────
+  create-release:
+    needs: [publish-web, build-tauri]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Create Release
+      - name: Generate release notes
         uses: softprops/action-gh-release@v2
         with:
           name: StratiGraph ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           generate_release_notes: true
+          draft: false
+          prerelease: false
