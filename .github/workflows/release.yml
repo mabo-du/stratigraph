@@ -97,16 +97,12 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev
 
-      # Install from root so workspace packages (@stratigraph/sync) resolve
-      - run: npm ci
+      # Install from root so workspace packages (@stratigraph/sync) resolve.
+      # Use --install-strategy=nested to work around npm workspaces bug #4828
+      # where optional platform binaries (cli-win32-x64-msvc, rollup-win32-x64-msvc)
+      # are not installed when deps are hoisted to the root node_modules.
+      - run: npm ci --install-strategy=nested
         working-directory: ./
-
-      # npm ci via workspaces skips optional platform binaries
-      # (e.g. @rollup/rollup-win32-x64-msvc, @tauri-apps/cli-win32-x64-msvc)
-      # Re-run in the workspace to resolve platform-specific optional deps
-      - name: Install platform-specific optional dependencies
-        run: npm install
-        working-directory: ./app
 
       # ── Build ─────────────────────────────────────────────────────────
       - name: Tauri build
