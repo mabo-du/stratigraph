@@ -26,10 +26,11 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: './app/package-lock.json'
+          cache-dependency-path: './package-lock.json'
 
+      # Install from root for workspace package resolution
       - run: npm ci
-        working-directory: ./app
+        working-directory: ./
 
       - run: npm run build
         working-directory: ./app
@@ -79,10 +80,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: './app/package-lock.json'
-
-      - run: npm ci
-        working-directory: ./app
+          cache-dependency-path: './package-lock.json'
 
       # ── Linux system deps ─────────────────────────────────────────────
       - name: Install Linux system dependencies
@@ -98,9 +96,13 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev
 
+      # Install from root so workspace packages (@stratigraph/sync) resolve
+      - run: npm ci
+        working-directory: ./
+
       # ── Build ─────────────────────────────────────────────────────────
       - name: Tauri build
-        uses: tauri-apps/tauri-action@v2
+        uses: tauri-apps/tauri-action@v0
         id: tauri-build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
