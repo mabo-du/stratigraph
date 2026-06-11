@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.5] — 2026-06-12
+
+### Fixed
+- Fixed CI build failure preventing Tauri desktop installers from being released by syncing package-lock.json.
+
+
 ## [1.0.4] — 2026-06-07
 
 ### Added
