@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.6] — 2026-06-12
+
+### Fixed
+- Fixed GitHub Pages deployment by adding enablement parameter to configure-pages action.
+
 ## [1.0.5] — 2026-06-12
 
 ### Fixed
