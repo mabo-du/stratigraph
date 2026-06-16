@@ -85,7 +85,7 @@ export class Room {
 
     // Setup providers
     for (const provider of config.providers) {
-      this._addProvider(provider);
+      this.addProvider(provider);
     }
   }
 
@@ -139,55 +139,75 @@ export class Room {
     this.doc.destroy();
   }
 
-  private _addProvider(config: SyncProvider): void {
-    if (config.type === 'websocket') {
-      import('y-websocket').then(({ WebsocketProvider }) => {
-        if (this._destroyed) return;
-        const wsProvider = new WebsocketProvider(
-          config.url,
-          this.config.roomId,
-          this.doc,
-          { connect: true },
-        );
-        wsProvider.on('status', (event: any) => {
-          if (typeof event.status === 'string') {
-            this._setStatus(event.status as SyncStatus, this._status.pending);
-          }
+  /**
+   * Adds a new sync provider to the room dynamically.
+   * Note for Phase 1: Dynamically-added providers must be wrapped by the signing layer 
+   * to ensure zero-trust security perimeter isn't bypassed by late-connecting peers.
+   */
+  public addProvider(config: SyncProvider): Promise<{ destroy: () => void }> {
+    return new Promise((resolve) => {
+      if (config.type === 'websocket') {
+        import('y-websocket').then(({ WebsocketProvider }) => {
+          if (this._destroyed) { resolve({ destroy: () => {} }); return; }
+          const wsProvider = new WebsocketProvider(
+            config.url,
+            this.config.roomId,
+            this.doc,
+            { connect: true },
+          );
+          wsProvider.on('status', (event: any) => {
+            if (typeof event.status === 'string') {
+              this._setStatus(event.status as SyncStatus, this._status.pending);
+            }
+          });
+          this._providers.push(wsProvider);
+          resolve({
+            destroy: () => {
+              wsProvider.destroy();
+              this._providers = this._providers.filter(p => p !== wsProvider);
+            }
+          });
         });
-        this._providers.push(wsProvider);
-      });
-    } else if (config.type === 'webrtc') {
-      import('y-webrtc').then(({ WebrtcProvider }) => {
-        if (this._destroyed) return;
-        const rtcProvider = new WebrtcProvider(
-          this.config.roomId,
-          this.doc,
-          { signaling: config.signaling, password: config.password },
-        );
-        rtcProvider.on('status', (event: any) => {
-          if (typeof event.status === 'string') {
-            this._setStatus(event.status as SyncStatus, this._status.pending);
+      } else if (config.type === 'webrtc') {
+        import('y-webrtc').then(({ WebrtcProvider }) => {
+          if (this._destroyed) { resolve({ destroy: () => {} }); return; }
+          const rtcProvider = new WebrtcProvider(
+            this.config.roomId,
+            this.doc,
+            { signaling: config.signaling, password: config.password },
+          );
+          rtcProvider.on('status', (event: any) => {
+            if (typeof event.status === 'string') {
+              this._setStatus(event.status as SyncStatus, this._status.pending);
+            }
+          });
+          
+          // Initialize MediaSync CAS transfer engine
+          if (this.config.localIdentity) {
+            Promise.all([
+              import('./mediaSync'),
+              import('@noble/ed25519'),
+              import('@noble/hashes/utils.js')
+            ]).then(([{ MediaSync }, _ed, { bytesToHex }]) => {
+              const privateKeyHex = bytesToHex(this.config.localIdentity!.privateKey);
+              const admittedPeersHex = ((this.doc as any).__admittedPeers || []).map((p: Uint8Array) => bytesToHex(p));
+              (this as any).mediaSync = new MediaSync(rtcProvider, this.doc, privateKeyHex, admittedPeersHex);
+            }).catch(console.error);
           }
-        });
-        
-        // Initialize MediaSync CAS transfer engine
-        if (this.config.localIdentity) {
-          Promise.all([
-            import('./mediaSync'),
-            import('@noble/ed25519'),
-            import('@noble/hashes/utils.js')
-          ]).then(([{ MediaSync }, _ed, { bytesToHex }]) => {
-            const privateKeyHex = bytesToHex(this.config.localIdentity!.privateKey);
-            const admittedPeersHex = ((this.doc as any).__admittedPeers || []).map((p: Uint8Array) => bytesToHex(p));
-            (this as any).mediaSync = new MediaSync(rtcProvider, this.doc, privateKeyHex, admittedPeersHex);
-          }).catch(console.error);
-        }
 
-        this._providers.push(rtcProvider);
-      });
-    }
+          this._providers.push(rtcProvider);
+          resolve({
+            destroy: () => {
+              rtcProvider.destroy();
+              this._providers = this._providers.filter(p => p !== rtcProvider);
+            }
+          });
+        });
+      } else {
+        resolve({ destroy: () => {} });
+      }
+    });
   }
-
   private _setStatus(status: SyncStatus, pending: number): void {
     this._status = { status, pending };
     this._emitStatus();

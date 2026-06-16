@@ -1,5 +1,6 @@
 import { WifiOff, Link } from 'lucide-react';
 import type { SyncStatus } from '@stratigraph/sync';
+import { isTauri } from '../utils/tauriBridge';
 
 interface Collaborator {
   userId: string;
@@ -47,6 +48,22 @@ export function CollaborationBar({
   const label = LABELS[status] || LABELS.disconnected;
 
   if (!isConnected) {
+    if (!isTauri()) {
+      return (
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '4px 12px', borderRadius: 6,
+            border: `1px solid var(--border-2)`,
+            color: 'var(--text-3)', fontSize: '0.8rem', cursor: 'not-allowed',
+          }}
+          title="Web app is offline-only for privacy. Use the desktop app for local P2P sync."
+        >
+          <WifiOff size={14} />
+          <span>Offline Only</span>
+        </div>
+      );
+    }
     return (
       <div
         style={{

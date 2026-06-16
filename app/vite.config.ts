@@ -1,11 +1,33 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import wasm from 'vite-plugin-wasm'
+import { readFileSync } from 'fs'
+import { createRequire } from 'module'
+
+const req = createRequire(import.meta.url)
+
+function copyWasm(): any {
+  return {
+    name: 'copy-wasm',
+    generateBundle() {
+      const wasmPath = req.resolve('oxigraph/web_bg.wasm')
+      const source = readFileSync(wasmPath)
+      this.emitFile({
+        type: 'asset',
+        fileName: 'assets/web_bg.wasm',
+        source
+      })
+    }
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    wasm(),
+    copyWasm(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons.svg'],
@@ -26,7 +48,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,wasm}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -41,7 +64,11 @@ export default defineConfig({
     }),
   ],
   base: process.env.GITHUB_REPOSITORY ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/` : '/',
+  optimizeDeps: {
+    exclude: ['oxigraph']
+  },
   build: {
+    target: 'es2022',
     rolldownOptions: {
       external: ['cytoscape-svg'],
       onwarn(warning, warn) {

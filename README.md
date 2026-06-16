@@ -3,7 +3,7 @@
   <h1>StratiGraph</h1>
   <p><strong>A Modern, AI-Ready Harris Matrix Generator & Digital Heritage Hub</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/version-v1.0.7-4a9e6f" alt="Version">
+    <img src="https://img.shields.io/badge/version-v1.0.8-4a9e6f" alt="Version">
     <img src="https://img.shields.io/badge/license-MIT-2a3a4a" alt="License">
     <img src="https://img.shields.io/badge/TypeScript-React-3178c6" alt="TypeScript React">
     <img src="https://img.shields.io/badge/tests-16%20suites%20136%20passing-4a9e6f" alt="Tests">
@@ -49,7 +49,7 @@ StratiGraph is the central hub of an open-source digital heritage workflow, inte
 *   **CSV Import:** Upload `contexts.csv` and `relationships.csv` files with a visual column mapper supporting 20+ naming convention variants.
 
 ### Real-Time P2P Collaboration
-WebRTC-based peer-to-peer sync using Yjs CRDTs with cryptographic identity enforcement via Ed25519 signatures. The native desktop wrapper handles firewall integration (Windows Defender, macOS TCC). Discover peers on your local network via mDNS — no server, no cloud, no sign-up.
+WebRTC-based peer-to-peer sync using Yjs CRDTs with cryptographic identity enforcement via Ed25519 signatures. The native desktop wrapper handles firewall integration (Windows Defender, macOS TCC). Discover peers on your local network via mDNS — no server, no cloud, no sign-up. *(Note: The browser/web build is explicitly offline-only by design to prevent privacy leaks when using public signaling servers).*
 
 ### Cross-Platform Desktop
 Native installers for Linux, macOS, and Windows built with Tauri v2. The app runs as a self-contained desktop application with native file dialogs, offline storage, and OS-level integration.

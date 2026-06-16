@@ -43,7 +43,7 @@ export function useCollaboration(options: UseCollaborationOptions): UseCollabora
       displayName: options.displayName,
       providers: options.syncServer
         ? [{ type: 'websocket', url: options.syncServer }]
-        : [{ type: 'webrtc' }],
+        : [], // Explicitly disable WebRTC fallback on web for privacy
       encryptionKey: key,
       persistence: true,
     };
@@ -61,7 +61,7 @@ export function useCollaboration(options: UseCollaborationOptions): UseCollabora
       displayName: options.displayName,
       providers: options.syncServer
         ? [{ type: 'websocket', url: options.syncServer }]
-        : [{ type: 'webrtc' }],
+        : [], // Explicitly disable WebRTC fallback on web for privacy
       encryptionKey: key,
       persistence: true,
     };

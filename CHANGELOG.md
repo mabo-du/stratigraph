@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.8] — 2026-06-16
+
+### Fixed
+- **Web P2P Privacy Fix** — Disabled WebRTC fallback completely on web builds to prevent privacy leaks when no custom signaling server is configured. Web builds are now explicitly "Offline Only" for collaboration.
+- **Desktop mDNS P2P Security** — Dynamically discovered mDNS peers are now properly wrapped by the Phase 1 Ed25519 signature layer. Added validation to ignore any non-local IP addresses (10.x.x.x, 172.16-31.x.x, 192.168.x.x) broadcasted via mDNS.
+- **Oxigraph WASM Bundling** — Fixed production bundling of the Oxigraph WASM dependency by explicitly copying it to `dist/assets` and increasing the PWA Workbox cache size limit to 10MB to accommodate the ~4MB database engine binary.
+
 ## [1.0.7] — 2026-06-16
 
 ### Fixed
