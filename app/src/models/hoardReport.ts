@@ -40,6 +40,7 @@ export function generateMatrixReport(
 ): MatrixReport {
   const stats = computeStats(contexts, observations, phases, events);
   const eedpPaths = extractEEDPPaths(contexts, observations, events);
+  stats.eedpPaths = eedpPaths.length;
   const phaseMap = new Map(phases.map(p => [p.id, p]));
 
   let md = '';

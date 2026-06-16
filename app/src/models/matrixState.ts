@@ -77,12 +77,16 @@ export type MatrixAction =
   | { type: 'UPDATE_CONTEXT'; context: Context }
   | { type: 'DELETE_CONTEXT'; id: string }
   | { type: 'ADD_OBSERVATION'; observation: Observation }
+  | { type: 'UPDATE_OBSERVATION'; observation: Observation }
   | { type: 'DELETE_OBSERVATION'; id: string }
   | { type: 'ADD_PHASE'; phase: Phase }
   | { type: 'UPDATE_PHASE'; phase: Phase }
   | { type: 'DELETE_PHASE'; id: string }
   | { type: 'SET_POSITIONS'; positions: Record<string, LayoutPosition> }
   | { type: 'UPDATE_POSITION'; id: string; position: LayoutPosition }
+  | { type: 'ADD_EVENT'; event: Event }
+  | { type: 'UPDATE_EVENT'; event: Event }
+  | { type: 'DELETE_EVENT'; id: string }
   | { type: 'IMPORT_DATA'; contexts: Context[]; observations: Observation[]; events: Event[] }
   | { type: 'LOAD_PROJECT'; state: MatrixState }
   | { type: 'SET_META'; meta: Partial<ProjectMeta> }

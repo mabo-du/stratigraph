@@ -62,8 +62,10 @@ export function generateOxCalScript(contexts: Context[], observations: Observati
           if (rDateParts.length === 2 && !isNaN(Number(rDateParts[0])) && !isNaN(Number(rDateParts[1]))) {
             script += `      R_Date("${safeName}", ${rDateParts[0]}, ${rDateParts[1]});\n`;
           } else {
-            script += `      // Unknown Date format: ${e.rDate}\n`;
-            script += `      Date("${safeName}", ${e.rDate});\n`;
+            // Non-standard date format — output as comment + Item placeholder
+            // to avoid producing an invalid OxCal script (Date() requires a numeric year)
+            script += `      // Non-standard date format: ${e.rDate}\n`;
+            script += `      Item("${safeName}"); // raw: ${e.rDate}\n`;
           }
         } else {
           // If no date, just drop it as an empty Item

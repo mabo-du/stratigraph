@@ -198,6 +198,16 @@ export async function buildStore(
   phases: Phase[],
   events: Event[]
 ): Promise<any> {
+  // Clean up existing store before building a new one
+  if (_store) {
+    try {
+      if (typeof _store.close === 'function') _store.close();
+      else if (typeof _store.clear === 'function') _store.clear();
+    } catch {
+      // Best-effort cleanup
+    }
+  }
+
   const oxigraph = await import('oxigraph');
   const store = new oxigraph.Store();
   

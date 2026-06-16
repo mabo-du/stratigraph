@@ -121,16 +121,18 @@ export function calibrateDate(
   sigma: number,
   resolution: number = 1,
 ): CalibratedResult {
-  const minCal = Math.max(
+  // Curve is sorted descending by calBP: curve[0] = oldest, curve[last] = youngest
+  // minCal = younger bound, maxCal = older bound (iterated from young→old)
+  const youngerBound = Math.max(
     curve[curve.length - 1].calBP,
     Math.min(c14BP - 5 * sigma - 200, curve[0].calBP),
   );
-  const maxCal = Math.min(
+  const olderBound = Math.min(
     curve[0].calBP,
     Math.max(c14BP + 5 * sigma + 200, curve[curve.length - 1].calBP),
   );
 
-  if (minCal >= maxCal) {
+  if (youngerBound >= olderBound) {
     // Date is completely outside the curve range
     return {
       calBP: c14BP,
@@ -146,7 +148,7 @@ export function calibrateDate(
   const density: { calBP: number; prob: number }[] = [];
   let totalProb = 0;
 
-  for (let cal = Math.round(minCal / resolution) * resolution; cal <= Math.round(maxCal / resolution) * resolution; cal += resolution) {
+  for (let cal = Math.round(youngerBound / resolution) * resolution; cal <= Math.round(olderBound / resolution) * resolution; cal += resolution) {
     const { c14BP: curveAge, error: curveError } = interpolateCurve(curve, cal);
     const combinedSigma = Math.sqrt(sigma * sigma + curveError * curveError);
     const lnProb = -0.5 * Math.pow((c14BP - curveAge) / combinedSigma, 2);

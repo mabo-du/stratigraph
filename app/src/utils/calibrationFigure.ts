@@ -42,15 +42,31 @@ export function generateCalibrationFigureSvg(
   const maxProb = Math.max(...result.density.map(p => p.prob));
   const yMax = maxProb * 1.15;
 
+  // Curve band Y scaling: normalise c14BP values to fit in a small band at the bottom of the plot
+  const curveC14Values = visCurve.map(p => p.c14BP);
+  const minC14 = Math.min(...curveC14Values);
+  const maxC14 = Math.max(...curveC14Values);
+  const c14Range = (maxC14 - minC14) || 1;
+  // Map c14BP → 0 to 0.08 in probability space for a visible curve band
+  const normC14 = (c14BP: number) => ((c14BP - minC14) / c14Range) * 0.08;
+
   // Scale functions
   const sx = (calBP: number) => MARGIN.left + PLOT_W * (1 - (calBP - xMin) / (xMax - xMin));
   const sy = (prob: number) => MARGIN.top + PLOT_H * (1 - prob / yMax);
 
-  // Build SVG paths
-  const curvePath = visCurve.map((p, i) => {
+  // Build SVG paths — calibration curve as a continuous band
+  // Upper edge: c14BP + 1σ error mapped to probability-space Y
+  // Lower edge: c14BP - 1σ error mapped to probability-space Y
+  const curveUpper = visCurve.map((p, i) => {
     const cmd = i === 0 ? 'M' : 'L';
-    return `${cmd}${sx(p.calBP).toFixed(1)},${sy(0).toFixed(1)} L${sx(p.calBP).toFixed(1)},${sy(0.02).toFixed(1)}`;
+    return `${cmd}${sx(p.calBP).toFixed(1)},${sy(normC14(p.c14BP + p.error)).toFixed(1)}`;
   }).join(' ');
+  const curveLower = visCurve.map((p, i) => {
+    const cmd = i === visCurve.length - 1 ? 'L' : 'L';
+    const reversed = visCurve[visCurve.length - 1 - i];
+    return `${cmd}${sx(reversed.calBP).toFixed(1)},${sy(normC14(reversed.c14BP - reversed.error)).toFixed(1)}`;
+  }).join(' ');
+  const curveBandPath = `${curveUpper} ${curveLower} Z`;
 
   // PDF polygon path
   const pdfPoints = result.density.map(p => `${sx(p.calBP).toFixed(1)},${sy(p.prob).toFixed(1)}`);
@@ -84,7 +100,7 @@ export function generateCalibrationFigureSvg(
     .title { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 14px; font-weight: bold; fill: #222; }
     .subtitle { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; fill: #666; }
     .axis-label { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; fill: #444; }
-    .curve { fill: none; stroke: #999; stroke-width: 0.5; stroke-dasharray: 2,2; }
+    .curve-band { fill: rgba(150,150,150,0.12); stroke: #999; stroke-width: 0.5; stroke-dasharray: 2,2; }
     .pdf-fill { fill: #4a7fa8; fill-opacity: 0.35; }
     .pdf-line { fill: none; stroke: #4a7fa8; stroke-width: 1.5; }
     .hpd-label { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; fill: #666; }
@@ -100,8 +116,8 @@ export function generateCalibrationFigureSvg(
     <rect x="${MARGIN.left}" y="${MARGIN.top}" width="${PLOT_W}" height="${PLOT_H}"/>
   </clipPath>
   <g clip-path="url(#plot-clip)">
-    <!-- Curve band -->
-    ${curvePath}
+    <!-- Calibration curve band (1σ error range) -->
+    <path class="curve-band" d="${curveBandPath}"/>
 
     <!-- PDF fill -->
     <path class="pdf-fill" d="${pdfPath}"/>

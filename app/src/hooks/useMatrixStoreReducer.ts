@@ -77,6 +77,13 @@ function matrixReducer(state: MatrixState, action: MatrixAction): MatrixState {
         observations: [...state.observations, action.observation],
       };
 
+    case 'UPDATE_OBSERVATION':
+      return {
+        ...state,
+        ...pushHistory(),
+        observations: state.observations.map(o => o.id === action.observation.id ? action.observation : o),
+      };
+
     case 'DELETE_OBSERVATION':
       return {
         ...state,
@@ -106,6 +113,27 @@ function matrixReducer(state: MatrixState, action: MatrixAction): MatrixState {
         contexts: state.contexts.map(c =>
           c.phase === action.id ? { ...c, phase: undefined } : c
         ),
+      };
+
+    case 'ADD_EVENT':
+      return {
+        ...state,
+        ...pushHistory(),
+        events: [...state.events, action.event],
+      };
+
+    case 'UPDATE_EVENT':
+      return {
+        ...state,
+        ...pushHistory(),
+        events: state.events.map(e => e.id === action.event.id ? action.event : e),
+      };
+
+    case 'DELETE_EVENT':
+      return {
+        ...state,
+        ...pushHistory(),
+        events: state.events.filter(e => e.id !== action.id),
       };
 
     case 'SET_POSITIONS':

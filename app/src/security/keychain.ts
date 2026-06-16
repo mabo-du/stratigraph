@@ -38,16 +38,16 @@ async function getStronghold() {
 // Web Crypto Fallback Storage (IndexedDB)
 // -----------------------------------------------------------------------------
 
-async function deriveKeyFromPin(pin: string): Promise<CryptoKey> {
+async function deriveKeyFromPin(pin: string, salt?: Uint8Array): Promise<CryptoKey> {
   const enc = new TextEncoder();
-  // Fixed salt for the local storage wrapper to allow deterministic derivation from the PIN
-  // In a real scenario, the salt would be stored alongside the encrypted payload.
-  const salt = enc.encode('stratigraph-local-salt'); 
+  // If no salt provided, derive from PIN alone (legacy/fallback).
+  // For best security the caller should generate and store a random salt.
+  const keySalt = salt ?? enc.encode('stratigraph-local-salt');
   const keyMaterial = await crypto.subtle.importKey(
     'raw', enc.encode(pin), { name: 'PBKDF2' }, false, ['deriveBits', 'deriveKey']
   );
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: keySalt, iterations: 100000, hash: 'SHA-256' },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     true,
@@ -95,14 +95,17 @@ export async function storeIdentity(privateKey: Uint8Array, publicKey: Uint8Arra
         return;
       } catch (e) {
         console.error('Failed to store identity in Stronghold', e);
-        // fallback to IDB below if preferred, but we should strictly rely on stronghold on Desktop
+        // TODO(t130): Once @tauri-apps/plugin-stronghold v2 API is stable, replace with
+        // the correct invocation pattern. For now, throw — do not silently fall back to
+        // less-secure IndexedDB storage on desktop.
         throw new Error('Stronghold storage failed', { cause: e });
       }
     }
   }
 
   // Web Fallback
-  const key = await deriveKeyFromPin(pin);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveKeyFromPin(pin, salt);
   const payload = new Uint8Array(privateKey.length + publicKey.length);
   payload.set(privateKey, 0);
   payload.set(publicKey, privateKey.length);
@@ -113,6 +116,7 @@ export async function storeIdentity(privateKey: Uint8Array, publicKey: Uint8Arra
   return new Promise((resolve, reject) => {
     const tx = db.transaction('keys', 'readwrite');
     tx.objectStore('keys').put(encrypted, 'keypair');
+    tx.objectStore('keys').put(salt, 'salt');
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -144,17 +148,18 @@ export async function loadIdentity(pin: string): Promise<{ privateKey: Uint8Arra
 
   // Web Fallback
   const db = await openDB();
-  const encrypted = await new Promise<Uint8Array | undefined>((resolve, reject) => {
+  const [encrypted, storedSalt] = await new Promise<[Uint8Array | undefined, Uint8Array | undefined]>((resolve, reject) => {
     const tx = db.transaction('keys', 'readonly');
-    const req = tx.objectStore('keys').get('keypair');
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    const encReq = tx.objectStore('keys').get('keypair');
+    const saltReq = tx.objectStore('keys').get('salt');
+    tx.oncomplete = () => resolve([encReq.result, saltReq.result]);
+    tx.onerror = () => reject(tx.error);
   });
 
   if (!encrypted) return null;
 
   try {
-    const key = await deriveKeyFromPin(pin);
+    const key = await deriveKeyFromPin(pin, storedSalt ?? undefined);
     const payload = await decryptAtRest(encrypted, key);
     const privateKey = payload.slice(0, 32);
     const publicKey = payload.slice(32);

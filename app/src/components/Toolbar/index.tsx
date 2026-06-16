@@ -146,7 +146,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showAwareness, setShowAwareness] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const loadInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const templateMenuRef = useRef<HTMLDivElement>(null);
 
@@ -393,20 +392,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             className="tb-btn"
             title="Load project"
             aria-label="Load project"
-            onClick={() => loadInputRef.current?.click()}
+            onClick={onLoad}
           >
             <FolderOpen size={15} />
           </button>
-          <input
-            ref={loadInputRef}
-            type="file"
-            accept=".json,.hmatrix.json"
-            style={{ display: 'none' }}
-            onChange={e => {
-              if (e.target.files?.[0]) onLoad();
-              e.target.value = '';
-            }}
-          />
           <div className="toolbar-divider" />
           <button
             className="tb-btn tb-btn--labeled tb-btn--accent"

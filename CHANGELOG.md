@@ -10,6 +10,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.7] — 2026-06-16
+
+### Fixed
+
+- **Critical: File-load cycle** — Toolbar's hidden file input no longer intercepts the file picker before Workspace's reader can process it. The Load button now delegates directly to Workspace's hidden input, fixing the double-picker cycle that prevented users from opening saved `.hmatrix.json` projects (#1).
+
+- **EEDP path count in reports** — `generateMatrixReport` now correctly populates the `eedpPaths` stat (was initialised as `0` by `computeStats` and never updated) (#2).
+
+- **Calibration curve SVG** — The IntCal20 curve band in publication-quality calibration plots now renders as a proper continuous upper/lower band instead of disconnected vertical dashes (#3).
+
+- **OxCal `Date()` fallback** — Non-standard rDate strings (e.g. "Late Bronze") are now emitted as `Item()` placeholders with an inline comment instead of being passed raw to OxCal's `Date()` function, fixing potential invalid script generation (#5).
+
+- **Redundant `arrayBuffer` fetch** — `saveMedia` no longer calls `file.arrayBuffer()` twice in the Tauri code path (#6).
+
+### Added
+
+- **`UPDATE_OBSERVATION` action** — New `MatrixAction` type for modifying existing observations in-place (source, target, or relationship type) (#11).
+
+- **Event CRUD actions** — `ADD_EVENT`, `UPDATE_EVENT`, and `DELETE_EVENT` action types and reducer handlers, enabling interactive management of radiocarbon dates and other events (#12).
+
+### Changed
+
+- **Calibration bounds naming** — `minCal`/`maxCal` renamed to `youngerBound`/`olderBound` with clarifying comment about the descending calBP sort order (#4).
+
+- **Keychain salt hardened** — The IndexedDB web fallback for key storage now uses a random 16-byte salt for PBKDF2 (generated per-write and stored alongside the ciphertext) instead of a fixed salt (#18).
+
+- **Semantic graph store cleanup** — `buildStore()` now attempts to close/clear any existing Oxigraph store before creating a new one, preventing abandoned store accumulation (#10).
+
+- **Stronghold stub documented** — Tauri Stronghold integration points annotated with TODO(t130) referencing the upcoming v2 API stabilisation (#8).
+
+- **FDE diagnostics stub documented** — `checkFullDiskEncryption()` annotated with TODO(t129); the native Rust command integration point is now clearly scoped (#7).
+
 ## [1.0.6] — 2026-06-12
 
 ### Fixed
@@ -84,7 +116,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Trowel** — Shared context data model; Trowel consumes StratiGraph EEDP outputs for deterministic report drafting.
 - **Libby** — OxCal CQL export for Bayesian radiocarbon calibration.
 
-[unreleased]: https://github.com/mabo-du/stratigraph/compare/v1.0.2...HEAD
+[unreleased]: https://github.com/mabo-du/stratigraph/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.7
+[1.0.6]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.6
+[1.0.5]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.5
+[1.0.4]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.4
+[1.0.3]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.3
 [1.0.2]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.2
 [1.0.1]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.1
 [1.0.0]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.0

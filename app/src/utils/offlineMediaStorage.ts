@@ -63,8 +63,7 @@ export async function saveMedia(file: File | Blob, explicitHash?: string): Promi
   const mimeType = file.type || 'application/octet-stream';
 
   if (isTauri()) {
-    // Tauri: Save to SQLite
-    const arrayBuffer = await file.arrayBuffer();
+    // Tauri: Save to SQLite (use arrayBuffer already computed above for SHA-256)
     const uint8Array = new Uint8Array(arrayBuffer);
     const db = await getSqliteDb();
     

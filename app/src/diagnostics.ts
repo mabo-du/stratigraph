@@ -4,6 +4,10 @@
  * exports: checkFullDiskEncryption() -> Promise<boolean>
  * 
  * used_by: App.tsx
+ *
+ * TODO(t129): Implement native Rust side of FDE check via Tauri command.
+ * When implemented, replace the stub return in the Tauri branch with:
+ *   return await invoke<boolean>('check_fde_status');
  */
 
 import { isTauri } from './utils/tauriBridge';
@@ -14,6 +18,11 @@ import { isTauri } from './utils/tauriBridge';
  * 
  * Returns true if FDE is active or if we cannot determine (optimistic fallback),
  * Returns false ONLY if we can positively determine FDE is disabled.
+ *
+ * === STUB STATUS ===
+ * The native Rust command (check_fde_status) is not yet implemented.
+ * This function currently always returns true for both browser and Tauri.
+ * See TODO(t129) above.
  */
 export async function checkFullDiskEncryption(): Promise<boolean> {
   if (!isTauri()) {
@@ -25,14 +34,11 @@ export async function checkFullDiskEncryption(): Promise<boolean> {
   try {
     await import('@tauri-apps/api/core');
     
-    // We would ideally call a custom Tauri command here that queries the OS:
-    // Windows: `manage-bde -status` or WMI
-    // macOS: `fdesetup status`
-    // Linux: check `/etc/crypttab` or `lsblk -o TYPE`
-    
-    // For Phase 1, since we haven't implemented the native rust side of this diagnostic yet,
-    // we return true but this is the hook where the Rust command would be integrated.
-    // Example: return await invoke<boolean>('check_fde_status');
+    // STUB: Native Rust command check_fde_status not yet implemented.
+    // Queries per platform when implemented:
+    //   Windows: manage-bde -status or WMI
+    //   macOS: fdesetup status
+    //   Linux: check /etc/crypttab or lsblk -o TYPE
     
     return true;
   } catch (e) {

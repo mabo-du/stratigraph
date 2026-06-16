@@ -61,8 +61,23 @@ export function useMatrixStoreCRDT(): MatrixStoreAPI {
           room.maps.observations.set(action.observation.id, action.observation);
           break;
 
+        case 'UPDATE_OBSERVATION':
+          if (room.maps.observations.has(action.observation.id)) {
+            room.maps.observations.set(action.observation.id, action.observation);
+          }
+          break;
+
         case 'DELETE_OBSERVATION':
           room.maps.observations.delete(action.id);
+          break;
+
+        case 'ADD_EVENT':
+        case 'UPDATE_EVENT':
+          room.maps.events.set(action.event.id, action.event);
+          break;
+
+        case 'DELETE_EVENT':
+          room.maps.events.delete(action.id);
           break;
 
         case 'ADD_PHASE':
