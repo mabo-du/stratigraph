@@ -61,10 +61,9 @@ export function generateCalibrationFigureSvg(
     const cmd = i === 0 ? 'M' : 'L';
     return `${cmd}${sx(p.calBP).toFixed(1)},${sy(normC14(p.c14BP + p.error)).toFixed(1)}`;
   }).join(' ');
-  const curveLower = visCurve.map((p, i) => {
-    const cmd = i === visCurve.length - 1 ? 'L' : 'L';
+  const curveLower = visCurve.map((_p, i) => {
     const reversed = visCurve[visCurve.length - 1 - i];
-    return `${cmd}${sx(reversed.calBP).toFixed(1)},${sy(normC14(reversed.c14BP - reversed.error)).toFixed(1)}`;
+    return `L${sx(reversed.calBP).toFixed(1)},${sy(normC14(reversed.c14BP - reversed.error)).toFixed(1)}`;
   }).join(' ');
   const curveBandPath = `${curveUpper} ${curveLower} Z`;
 

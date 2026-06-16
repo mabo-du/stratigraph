@@ -42,7 +42,7 @@ async function deriveKeyFromPin(pin: string, salt?: Uint8Array): Promise<CryptoK
   const enc = new TextEncoder();
   // If no salt provided, derive from PIN alone (legacy/fallback).
   // For best security the caller should generate and store a random salt.
-  const keySalt = salt ?? enc.encode('stratigraph-local-salt');
+  const keySalt: BufferSource = salt ? new Uint8Array(salt) : enc.encode('stratigraph-local-salt');
   const keyMaterial = await crypto.subtle.importKey(
     'raw', enc.encode(pin), { name: 'PBKDF2' }, false, ['deriveBits', 'deriveKey']
   );
