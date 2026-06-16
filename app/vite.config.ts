@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import wasm from 'vite-plugin-wasm'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { createRequire } from 'module'
 
 const req = createRequire(import.meta.url)
@@ -12,6 +12,9 @@ function copyWasm(): any {
     name: 'copy-wasm',
     generateBundle() {
       const wasmPath = req.resolve('oxigraph/web_bg.wasm')
+      if (!existsSync(wasmPath)) {
+        throw new Error(`CRITICAL BUILD ERROR: Oxigraph WASM binary not found at ${wasmPath}. The copy-wasm plugin requires this file to exist.`)
+      }
       const source = readFileSync(wasmPath)
       this.emitFile({
         type: 'asset',
