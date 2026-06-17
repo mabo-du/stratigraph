@@ -2,7 +2,7 @@ import { Doc, UndoManager } from 'yjs';
 import type { RoomConfig, SyncProvider, SyncStatus, StatusEvent, RemoteChange, RoomMaps } from './types';
 import { createPersistence } from './persistence';
 import { createAwareness, type AwarenessManager } from './awareness';
-import { signUpdate, verifyUpdate } from '../../../app/src/security/crypto';
+import { signUpdate } from '../../../app/src/security/crypto';
 import { performPostMergeReduction } from '../../../app/src/models/reconciliation';
 
 export class Room {
@@ -244,58 +244,12 @@ export class Room {
       return originalOn(name as any, f as any);
     };
 
-    // Note: We need a way to intercept incoming updates before applyUpdate is called,
-    // or monkey-patch Y.applyUpdate globally. For safety and avoiding global side effects,
-    // we monkey-patch the Y module globally but scope the check to docs that have localIdentity.
-    // However, a cleaner way in the browser is to wrap Y.applyUpdate natively.
-    if (!(globalThis as any).__yjs_intercepted) {
-      (globalThis as any).__yjs_intercepted = true;
-      const Y = require('yjs');
-      const originalApplyUpdate = Y.applyUpdate;
-      Y.applyUpdate = function(doc: Doc, update: Uint8Array, transactionOrigin?: any) {
-        // Only enforce for signed docs (64 byte sig prefix)
-        if (update.length > 64) {
-          const sig = update.slice(0, 64);
-          const realUpdate = update.slice(64);
-          
-          // Bootstrap carve-out: Trust our own local identity
-          // In a real app we'd verify against a known list of admitted peers
-          let verified = false;
-          const knownPeers = (doc as any).__admittedPeers || [];
-          for (const pk of knownPeers) {
-            if (verifyUpdate(sig, realUpdate, pk)) {
-              verified = true;
-              break;
-            }
-          }
-          
-          if (verified) {
-            return originalApplyUpdate(doc, realUpdate, transactionOrigin);
-          } else {
-            console.warn("Rejected untrusted Yjs update");
-            return;
-          }
-        }
-        
-        // Unsigned update (e.g. from local persistence bootstrap)
-        return originalApplyUpdate(doc, update, transactionOrigin);
-      };
-      
-      const originalEncodeStateAsUpdate = Y.encodeStateAsUpdate;
-      Y.encodeStateAsUpdate = function(doc: Doc, encodedTargetStateVector?: Uint8Array) {
-        const update = originalEncodeStateAsUpdate(doc, encodedTargetStateVector);
-        if ((doc as any).__localIdentity) {
-           const sig = signUpdate(update, (doc as any).__localIdentity.privateKey);
-           const signedUpdate = new Uint8Array(sig.length + update.length);
-           signedUpdate.set(sig, 0);
-           signedUpdate.set(update, sig.length);
-           return signedUpdate;
-        }
-        return update;
-      };
-    }
-    
+    // Enable our custom Zero-Trust Yjs wrapper globally for incoming updates
     if (config.localIdentity) {
+      import('./yjs-wrapper.js').then(({ enableZeroTrust }) => {
+        enableZeroTrust(config.localIdentity!.publicKey);
+      }).catch(console.error);
+
       (this.doc as any).__localIdentity = config.localIdentity;
       // Initialize admitted peers list including self (bootstrap carve-out)
       (this.doc as any).__admittedPeers = [config.localIdentity.publicKey, ...(config.admittedPeers || [])];

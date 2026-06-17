@@ -133,6 +133,17 @@ body {
   border-bottom: 1px solid var(--border);
   z-index: 20;
   flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Hide scrollbar for cleaner toolbar */
+.toolbar::-webkit-scrollbar {
+  height: 4px;
+}
+.toolbar::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 4px;
 }
 
 .toolbar-brand {

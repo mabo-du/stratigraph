@@ -122,11 +122,15 @@ export function useMatrixStoreCRDT(): MatrixStoreAPI {
           room.maps.phases.clear();
           room.maps.events.clear();
           room.maps.positions.clear();
+          room.maps.meta.clear();
           action.state.contexts.forEach(c => room.maps.contexts.set(c.id, c));
           action.state.observations.forEach(o => room.maps.observations.set(o.id, o));
           action.state.phases.forEach(p => room.maps.phases.set(p.id, p));
           action.state.events.forEach(e => room.maps.events.set(e.id, e));
           Object.entries(action.state.positions).forEach(([id, p]) => room.maps.positions.set(id, p));
+          if (action.state.meta) {
+            Object.entries(action.state.meta).forEach(([k, v]) => room.maps.meta.set(k, v as any));
+          }
           setSelectedContextId(null);
           break;
 

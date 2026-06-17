@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { createRoom, generateEncryptionKey } from '@stratigraph/sync';
 import type { Room, RoomConfig, SyncStatus, AwarenessState } from '@stratigraph/sync';
 
@@ -80,6 +80,18 @@ export function useCollaboration(options: UseCollaborationOptions): UseCollabora
       setUsers([]);
     }
   }, [room]);
+
+  // Auto-start or join session on mount if none exists
+  // This ensures the CRDT store is immediately usable for offline-first local editing
+  useEffect(() => {
+    if (!room) {
+      if (options.existingRoomId && options.existingKey) {
+        joinSession(options.existingRoomId, options.existingKey);
+      } else {
+        startSession();
+      }
+    }
+  }, [room, options.existingRoomId, options.existingKey, joinSession, startSession]);
 
   return {
     room,

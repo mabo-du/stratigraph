@@ -9,6 +9,7 @@ interface SyncContextValue {
   connected: boolean;
   isLoaded: boolean;
   users: AwarenessState[];
+  __isProvided?: boolean;
 }
 
 const SyncContext = createContext<SyncContextValue>({
@@ -17,6 +18,7 @@ const SyncContext = createContext<SyncContextValue>({
   connected: false,
   isLoaded: false,
   users: [],
+  __isProvided: false,
 });
 
 interface SyncProviderProps {
@@ -48,6 +50,7 @@ export function SyncProvider({ room, children }: SyncProviderProps) {
     connected: status.status === 'connected' || status.status === 'synced',
     isLoaded: room ? room.isLoaded : false,
     users,
+    __isProvided: true,
   }), [room, status, users]);
 
   return (
@@ -63,7 +66,7 @@ export function SyncProvider({ room, children }: SyncProviderProps) {
  */
 export function useSyncContext(): SyncContextValue {
   const ctx = useContext(SyncContext);
-  if (!ctx.room) {
+  if (!ctx.__isProvided) {
     console.warn('useSyncContext used outside SyncProvider');
   }
   return ctx;

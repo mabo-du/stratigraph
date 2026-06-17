@@ -23,17 +23,23 @@ export function useSync<T>(selector: (maps: RoomMaps) => T): T {
 
   const getSnapshot = useCallback((): T => {
     if (!room) {
-      // Return empty state when no room exists
-      return selectorRef.current({
-        contexts: new Map() as any,
-        observations: new Map() as any,
-        phases: new Map() as any,
-        events: new Map() as any,
-        positions: new Map() as any,
-        meta: new Map() as any,
-        room: new Map() as any,
-        quarantined_edges: new Map() as any,
-      });
+      // Return empty state when no room exists, cached to avoid React infinite loops
+      if (!snapshotRef.current || snapshotRef.current.revision !== -1) {
+        snapshotRef.current = {
+          revision: -1,
+          value: selectorRef.current({
+            contexts: new Map() as any,
+            observations: new Map() as any,
+            phases: new Map() as any,
+            events: new Map() as any,
+            positions: new Map() as any,
+            meta: new Map() as any,
+            room: new Map() as any,
+            quarantined_edges: new Map() as any,
+          })
+        };
+      }
+      return snapshotRef.current.value;
     }
 
     if (snapshotRef.current && snapshotRef.current.revision === revisionRef.current) {

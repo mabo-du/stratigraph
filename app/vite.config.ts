@@ -25,9 +25,28 @@ function copyWasm(): any {
   }
 }
 
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {}
+  },
   plugins: [
+    {
+      name: 'yjs-interceptor',
+      enforce: 'pre',
+      resolveId(source, importer) {
+        if (source === 'yjs' && importer && !importer.includes('yjs-wrapper')) {
+          return resolve(__dirname, '../packages/stratigraph-sync/src/yjs-wrapper.ts');
+        }
+        return null; // Let Vite handle it
+      }
+    },
     react(),
     wasm(),
     copyWasm(),
