@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.0.9] — 2026-06-17
+
+### Fixed
+- **Toolbar UI & Dropdown Clipping** — Fixed an issue where the Export dropdown menu was being clipped and hidden behind the canvas. Replaced the `overflow-x` approach with a responsive `flex-wrap` layout on the toolbar and elevated its `z-index` to properly escape stacking contexts without horizontal scrolling issues.
+
 ## [1.0.8] — 2026-06-16
 
 ### Fixed
@@ -124,7 +129,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Trowel** — Shared context data model; Trowel consumes StratiGraph EEDP outputs for deterministic report drafting.
 - **Libby** — OxCal CQL export for Bayesian radiocarbon calibration.
 
-[unreleased]: https://github.com/mabo-du/stratigraph/compare/v1.0.7...HEAD
+[unreleased]: https://github.com/mabo-du/stratigraph/compare/v1.0.9...HEAD
+[1.0.9]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.9
+[1.0.8]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.8
 [1.0.7]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.7
 [1.0.6]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.6
 [1.0.5]: https://github.com/mabo-du/stratigraph/releases/tag/v1.0.5
