@@ -76,7 +76,7 @@ export interface HoardContextSheet {
 // Shared contract: schemas/context-sheet-v1.json
 // Full validation would use Ajv; here we check critical invariants.
 
-const SCHEMA_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const SCHEMA_VERSION_PATTERN = /^\d+-\d+-\d+$/;
 
 export interface ValidationResult {
   valid: boolean;
@@ -103,7 +103,7 @@ export function validateHoardContext(ctx: HoardContextSheet): ValidationResult {
 
   // schema_version format
   if (ctx.schema_version && !SCHEMA_VERSION_PATTERN.test(ctx.schema_version)) {
-    warnings.push(`schema_version "${ctx.schema_version}" does not match semver pattern`);
+    warnings.push(`schema_version "${ctx.schema_version}" does not match SchemaVer pattern (e.g. "2-0-0")`);
   }
 
   // Relationship arrays should be arrays
