@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -26,8 +26,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: './package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "./package-lock.json"
 
       # Install from root for workspace package resolution
       - run: npm ci
@@ -42,7 +42,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: './app/dist'
+          path: "./app/dist"
 
       - id: deployment
         uses: actions/deploy-pages@v4
@@ -82,8 +82,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: './package-lock.json'
+          cache: "npm"
+          cache-dependency-path: "./package-lock.json"
 
       # ── Linux system deps ─────────────────────────────────────────────
       - name: Install Linux system dependencies
@@ -124,8 +124,8 @@ jobs:
         with:
           projectPath: app
           tagName: ${{ github.ref_name }}
-          releaseName: 'StratiGraph ${{ github.ref_name }}'
-          releaseBody: 'See the assets below to download and install StratiGraph.'
+          releaseName: "StratiGraph ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install StratiGraph."
           releaseDraft: true
           prerelease: false
           args: --bundles ${{ matrix.bundle }}
@@ -148,3 +148,23 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+  # ── PyPI publish ───────────────────────────────────────────────────────────
+  publish-pypi:
+    needs: [create-release]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        working-directory: packages/stratigraph-sync-python
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
