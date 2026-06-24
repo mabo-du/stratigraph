@@ -179,7 +179,6 @@ export const Scene3D: React.FC<Scene3DProps> = ({
     const maxRange = Math.max(rangeX, rangeY, rangeZ);
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
-    const centerZ = (minZ + maxZ) / 2;
 
     // Reset camera to sensible default position centered on data
     const scale = 8 / maxRange; // fit data into ~8 unit box
