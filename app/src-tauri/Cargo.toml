@@ -1,6 +1,6 @@
 [package]
 name = "stratigraph"
-version = "1.0.4"
+version = "1.1.0"
 description = "A modern, AI-ready Harris Matrix generator for archaeological stratigraphy"
 authors = ["Marcus Quinn"]
 license = "MIT"
@@ -27,7 +27,6 @@ tauri-plugin-deep-link = "2"
 mdns-sd = "0.20.0"
 axum = { version = "0.8.4", features = ["ws"] }
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "net"] }
-tokio-tungstenite = "0.29.0"
 yrs = { version = "0.18" }
 uuid = { version = "1.20.0", features = ["v4"] }
 futures = "0.3.32"

@@ -17,12 +17,12 @@ interface IncomingTransfer {
 export class MediaSync {
   private mediaChannels = new Map<string, RTCDataChannel>(); // peerId -> channel
   private incoming = new Map<string, IncomingTransfer>(); // hash -> transfer state
-  
+
   // local configuration
   private privateKey: Uint8Array;
   private publicKeyHex: string;
   private admittedPeers: Set<string>;
-  
+
   private provider: WebrtcProvider;
   private ydoc: Y.Doc;
 
@@ -69,17 +69,17 @@ export class MediaSync {
       // Create a pre-negotiated out-of-band data channel
       const dc = pc.createDataChannel('stratigraph-media', { negotiated: true, id: 42 });
       dc.binaryType = 'arraybuffer';
-      
+
       dc.onopen = () => {
         console.log(`[MediaSync] DataChannel open for ${peerId}`);
         this.mediaChannels.set(peerId, dc);
         this.handleAwarenessChange(); // check if we need to send anything now that channel is open
       };
-      
+
       dc.onmessage = async (event) => {
         await this.handleMessage(peerId, new Uint8Array(event.data));
       };
-      
+
       dc.onclose = () => {
         this.mediaChannels.delete(peerId);
       };
@@ -109,7 +109,7 @@ export class MediaSync {
 
     const currentRequests = this.provider.awareness.getLocalState()?.media_requests || [];
     const newRequests = Array.from(neededHashes);
-    
+
     // Only update if changed to prevent awareness thrashing
     if (JSON.stringify(currentRequests) !== JSON.stringify(newRequests)) {
       this.provider.awareness.setLocalStateField('media_requests', newRequests);
@@ -119,19 +119,19 @@ export class MediaSync {
   private async handleAwarenessChange() {
     // Look at all peers' requests and see if we can fulfill them
     const states = this.provider.awareness.getStates();
-    
+
     for (const [clientId, state] of states.entries()) {
       if (clientId === this.provider.awareness.clientID) continue;
-      
+
       const requests = (state as any).media_requests as string[];
       if (!requests || requests.length === 0) continue;
 
       // Map awareness clientId to WebRTC peerId
       // (y-webrtc awareness state includes peer identity indirectly, but actually we can just broadcast the offer to all connected peers if they requested it)
       // Actually, let's just find the peerId in webrtcConns.
-      // y-webrtc awareness does not expose peerId natively, but we can just broadcast the OFFER to all connected data channels if ANY peer requested it. 
+      // y-webrtc awareness does not expose peerId natively, but we can just broadcast the OFFER to all connected data channels if ANY peer requested it.
       // The peer who needs it will ACCEPT it.
-      
+
       for (const hash of requests) {
         // If we have this file, we can offer it
         const fileUrl = await loadMedia(hash);
@@ -163,14 +163,14 @@ export class MediaSync {
     const encoder = new TextEncoder();
     const hashBytes = encoder.encode(hash.padEnd(64, ' '));
     const pubKeyBytes = encoder.encode(this.publicKeyHex);
-    
+
     const signature = await ed.sign(hashBytes, this.privateKey);
     const sigHex = bytesToHex(signature);
     const sigBytes = encoder.encode(sigHex);
 
     const payload = new Uint8Array(1 + 64 + 8 + 64 + 128);
     const view = new DataView(payload.buffer);
-    
+
     payload[0] = 0; // TYPE: OFFER
     payload.set(hashBytes, 1);
     view.setFloat64(65, size, true);
@@ -227,7 +227,7 @@ export class MediaSync {
       acceptPayload[0] = 1; // ACCEPT
       acceptPayload.set(hashBytes, 1);
       // NOTE: For simplicity, we just send ACCEPT. In a true resume, we'd append the received chunk indices.
-      
+
       const dc = this.mediaChannels.get(peerId);
       if (dc) dc.send(acceptPayload);
 
@@ -360,7 +360,7 @@ export class MediaSync {
         delete orphans[hash];
       }
     }
-    
+
     // Clean up orphans map for hashes we no longer have locally (e.g. manually deleted)
     for (const hash of Object.keys(orphans)) {
       if (!localHashes.includes(hash)) {
@@ -369,7 +369,7 @@ export class MediaSync {
     }
 
     localStorage.setItem('stratigraph_cas_orphans', JSON.stringify(orphans));
-    
+
     if (deletedCount > 0) {
       console.log(`[MediaSync] GC completed: purged ${deletedCount} orphaned blobs.`);
     }

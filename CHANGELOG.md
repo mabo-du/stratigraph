@@ -10,6 +10,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - No unreleased changes yet.
 
+## [1.1.0] — 2026-06-25
+
+### Security (Audit-Driven — 11 issues resolved)
+
+- **Stop writing encryption keys to exported project files** — `roomId`, `roomKey`, and `syncServer` are no longer serialised into `.hmatrix.json` exports. Loaded files ignore any legacy collaboration keys present in older exports.
+- **Replace hardcoded Stronghold salt** — A per-install random 32-byte salt is generated on first run and persisted to disk, replacing the identical-for-everyone compiled-in salt.
+- **CSPRNG for collaboration room IDs** — `crypto.getRandomValues()` replaces `Math.random()` for room ID generation.
+- **Encryption key moved to URL fragment** — The collaboration encryption key is now in the `#key=` fragment (client-side only) instead of the `?key=` query parameter, preventing server-side logging.
+- **Content-Security-Policy** — Added CSP headers to both `tauri.conf.json` and `index.html`, restricting resources to `'self'` with explicit allowlists for WebSocket, Google Fonts, and Web Workers.
+- **Relay server bound to loopback** — The Axum WebSocket relay now binds to `127.0.0.1` instead of `0.0.0.0`, preventing unauthorised LAN access.
+- **PBKDF2 PIN stretching for SPAKE2 simulation** — The QR-ceremony session key derivation now stretches the PIN through 100 000 PBKDF2 iterations before use.
+- **Restored IndexedDB fallback with visible banner** — On desktop, when Stronghold (secure hardware storage) is unavailable, the app falls back to IndexedDB and shows an on-screen warning banner in the Identity Setup dialog.
+- **Explicit consent for collaboration** — The auto-start `useEffect` was removed. Collaboration sessions only start when the user clicks "Collaborate" or "Join".
+- **Photo URL sanitisation** — Context photo URLs are validated against an allowlist (`http:`, `https:`, `blob:`) before rendering.
+- **Removed raw error object logging** — Console error logs in `keychain.ts` no longer leak caught exception objects.
+
+### Infrastructure — Room-Scoped WebSocket Relay
+
+- **One Yrs document per room** — The Rust relay creates a separate document per room ID (via `RoomRegistry`), eliminating the old single-global-Doc architecture.
+- **Room cleanup on project switch** — The `cleanup_room` Tauri command lets the JS side drop old rooms when switching projects, preventing memory leaks.
+- **Removed redundant Rust-to-Rust full-mesh** — Deleted `axum_client.rs` (130 lines) and the full-mesh tie-breaker from `mdns_plugin.rs`. The JS side's y-websocket connections handle LAN peer sync.
+- **Removed `tokio-tungstenite`** dependency.
+
+### Collaboration — Now Functionally Complete
+
+- **WebSocket path matching fixed** — The Axum server now serves both `/sync` (Rust-to-Rust) and `/sync/{room_id}` (JS y-websocket) routes.
+- **mDNS `event.roomId` bug fixed** — Room ID comparison now reads from nested `properties` HashMap where the Rust side actually sends it.
+- **mDNS `serviceType` parameter added** — Discovery was silently failing because the JS side never passed the required `service_type` argument.
+- **mDNS service registration added** — The app now announces itself on the local network via `register_service`, so peers can discover it.
+- **cryptographic UUID for project identity** — Project collaboration identity uses `crypto.randomUUID()` instead of the user-facing project name.
+- **Local-only room on mount** — A Yjs room is created immediately on app start (no network), so the CRDT store works standalone even before starting collaboration.
+- **Join Session dialog** — New `JoinDialog` component allows pasting a `stratigraph://join/...` link or scanning a QR code via `html5-qrcode` to join an existing session.
+- **"Join" button in CollaborationBar** — Wired alongside the existing "Collaborate" button for explicit join flow.
+
+### 3D Scene Viewer
+
+- **Auto-centering and scaling** — The Three.js `Scene3D` component now computes data bounds and normalises coordinates to fill the viewport, so georeferenced contexts appear centred with proper scaling.
+- **Camera positioned for isometric overview** — Default camera angle provides a clear top-down isometric view of all spatial contexts.
+- **Demo data now visual in 3D** — The Roman Villa example includes spatial centroids on 15 of 18 contexts, visible as coloured boxes in the 3D view.
+
+### Import Modal
+
+- **Properly centred with backdrop** — The Import modal now uses `position: fixed` with `flex` centering instead of unstyled CSS class names that rendered it off-screen.
+
 ## [1.0.9] — 2026-06-17
 
 ### Fixed

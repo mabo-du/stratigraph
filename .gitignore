@@ -18,7 +18,18 @@ CLAUDE.md
 TODO.md
 .agents/
 .claude/
+.claude/local/
+.cursor/cache/
 .windsurf/
 .ctx/
 .beads/
+.hk/
+.charter/
+*.charter-session
+
+# Audit / review artifacts
+2026*.md
+
+# Scratch
+scratch/
 todo/

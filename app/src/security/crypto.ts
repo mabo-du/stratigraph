@@ -1,7 +1,7 @@
 /**
  * crypto.ts — Zero-Trust Identity and Security Foundation
- * 
- * exports: 
+ *
+ * exports:
  *   generateIdentity(seed?: Uint8Array) -> { publicKey: Uint8Array, privateKey: Uint8Array }
  *   signUpdate(message: Uint8Array, privateKey: Uint8Array) -> Uint8Array
  *   verifyUpdate(signature: Uint8Array, message: Uint8Array, publicKey: Uint8Array) -> boolean
@@ -10,10 +10,10 @@
  *   deriveSpake2SessionKey(pin: string, localPubKey: Uint8Array, remotePubKey: Uint8Array) -> Promise<Uint8Array>
  *   encryptAtRest(data: Uint8Array, key: CryptoKey) -> Promise<Uint8Array>
  *   decryptAtRest(data: Uint8Array, key: CryptoKey) -> Promise<Uint8Array>
- * 
+ *
  * used_by: room.ts, persistence.ts, QRScanner.tsx, QRDisplay.tsx
- * 
- * rules: 
+ *
+ * rules:
  *   - Ed25519 used for all digital signatures (Yjs updates).
  *   - AES-GCM (256-bit) used for all at-rest encryption and backup export.
  *   - SPAKE2 (simulated via ECDH+KDF for now) derives session keys from QR PINs.
@@ -122,8 +122,13 @@ export async function importEncryptedBackup(data: Uint8Array, pin: string): Prom
 
 /**
  * Derive a secure session key using the QR ceremony PIN and both public keys.
- * Note: In a production environment, this should use a strict SPAKE2 implementation.
- * Here we use a highly constrained KDF combining the PIN and public keys to derive a symmetric key.
+ *
+ * Uses PBKDF2-HMAC-SHA256 (100 000 iterations) to stretch the PIN before
+ * feeding it into HKDF together with both peers' public keys.  The stretching
+ * makes offline PIN-guessing attacks substantially more expensive.
+ *
+ * TODO: Replace with a full SPAKE2+ (RFC 9383) or OPAQUE implementation for
+ * production use.
  */
 export async function deriveSpake2SessionKey(pin: string, localPubKey: Uint8Array, remotePubKey: Uint8Array): Promise<Uint8Array> {
   // Sort pubkeys to ensure both peers derive the identical shared material regardless of role
@@ -139,10 +144,31 @@ export async function deriveSpake2SessionKey(pin: string, localPubKey: Uint8Arra
   ikm.set(keys[1], keys[0].length);
 
   const encoder = new TextEncoder();
-  const salt = encoder.encode(pin); // Use PIN as the salt to mandate knowledge of it
+
+  // Stretch the PIN via PBKDF2 (100 000 iterations) before feeding it into
+  // HKDF.  This forces an attacker who captures both public keys to perform
+  // 100 000 hash iterations per PIN guess instead of a single invocation.
+  // TODO: Replace with a full SPAKE2+ (RFC 9383) or OPAQUE implementation.
+  const pinKeyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(pin),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits'],
+  );
+  const stretchedPin = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode('stratigraph-spake2-pbkdf2'),
+      iterations: 100_000,
+      hash: 'SHA-256',
+    },
+    pinKeyMaterial,
+    256,
+  );
 
   // HKDF-SHA256 to derive a 32-byte symmetric session key
-  return hkdf(sha256, ikm, salt, encoder.encode('stratigraph-spake2-session'), 32);
+  return hkdf(sha256, ikm, new Uint8Array(stretchedPin), encoder.encode('stratigraph-spake2-session'), 32);
 }
 
 // -----------------------------------------------------------------------------

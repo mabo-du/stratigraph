@@ -23,9 +23,32 @@ interface UseCollaborationReturn {
 }
 
 export function useCollaboration(options: UseCollaborationOptions): UseCollaborationReturn {
-  const [room, setRoom] = useState<Room | null>(null);
+  // Create a local-only room immediately so the CRDT store has a Yjs Doc
+  // to read from and write to even before any network session is started.
+  // Network providers are added only when the user explicitly clicks
+  // "Collaborate" or joins a session — satisfying P0-9 (informed consent).
+  const [room, setRoom] = useState<Room | null>(() => {
+    const key = options.existingKey || generateEncryptionKey();
+    const config: RoomConfig = {
+      roomId: options.projectId,
+      userId: options.userId,
+      displayName: options.displayName,
+      providers: [],  // local-only — no network providers
+      encryptionKey: key,
+      persistence: true,
+    };
+    return createRoom(config);
+  });
   const [status, setStatus] = useState<SyncStatus>('disconnected');
   const [users, setUsers] = useState<AwarenessState[]>([]);
+
+  // Wire up status + awareness listeners, properly cleaning up on room change.
+  useEffect(() => {
+    if (!room) return;
+    const unsubStatus = room.onStatus((e) => setStatus(e.status));
+    const unsubUsers = room.awareness.onChange(setUsers);
+    return () => { unsubStatus(); unsubUsers(); };
+  }, [room]);
 
   const shareableLink = useMemo(() => {
     if (!room) return '';
@@ -33,65 +56,46 @@ export function useCollaboration(options: UseCollaborationOptions): UseCollabora
   }, [room, options.syncServer]);
 
   const startSession = useCallback(() => {
-    const key = options.existingKey || generateEncryptionKey();
-    const roomId = options.existingRoomId ||
-      Array.from({ length: 16 }, () => Math.random().toString(16)[2]).join('');
+    if (!room) return;
+    // Add a WebSocket provider to the existing local room — this connects
+    // it to the local relay (and through it, to discovered LAN peers).
+    // The room ID and encryption key already set at mount time are preserved.
+    if (options.syncServer) {
+      room.addProvider({ type: 'websocket', url: options.syncServer });
+    }
+  }, [room, options.syncServer]);
+
+  const joinSession = useCallback((joinRoomId: string, key: string) => {
+    // Destroy the current local room and create a new one configured
+    // to join the remote session.
+    if (room) room.destroy();
 
     const config: RoomConfig = {
-      roomId,
+      roomId: joinRoomId,
       userId: options.userId,
       displayName: options.displayName,
       providers: options.syncServer
         ? [{ type: 'websocket', url: options.syncServer }]
-        : [], // Explicitly disable WebRTC fallback on web for privacy
+        : [],
       encryptionKey: key,
       persistence: true,
     };
 
     const newRoom = createRoom(config);
-    newRoom.onStatus((e) => setStatus(e.status));
-    newRoom.awareness.onChange(setUsers);
     setRoom(newRoom);
-  }, [options]);
-
-  const joinSession = useCallback((roomId: string, key: string) => {
-    const config: RoomConfig = {
-      roomId,
-      userId: options.userId,
-      displayName: options.displayName,
-      providers: options.syncServer
-        ? [{ type: 'websocket', url: options.syncServer }]
-        : [], // Explicitly disable WebRTC fallback on web for privacy
-      encryptionKey: key,
-      persistence: true,
-    };
-
-    const newRoom = createRoom(config);
-    newRoom.onStatus((e) => setStatus(e.status));
-    newRoom.awareness.onChange(setUsers);
-    setRoom(newRoom);
-  }, [options]);
+  }, [room, options]);
 
   const leaveSession = useCallback(() => {
     if (room) {
+      // room.leave() disconnects network providers but keeps the Yjs Doc
+      // and IndexedDB persistence alive for offline use.
       room.leave();
-      setRoom(null);
-      setStatus('disconnected');
-      setUsers([]);
     }
   }, [room]);
 
-  // Auto-start or join session on mount if none exists
-  // This ensures the CRDT store is immediately usable for offline-first local editing
-  useEffect(() => {
-    if (!room) {
-      if (options.existingRoomId && options.existingKey) {
-        joinSession(options.existingRoomId, options.existingKey);
-      } else {
-        startSession();
-      }
-    }
-  }, [room, options.existingRoomId, options.existingKey, joinSession, startSession]);
+  // Collaboration sessions must be started explicitly by the user —
+  // we removed the auto-start effect to require informed consent.
+  // Callers should invoke startSession() or joinSession() from a user action.
 
   return {
     room,

@@ -51,7 +51,7 @@ export class Room {
     this.doc.on('update', (_update: Uint8Array, origin: any) => {
       // Guard against our own reduction edits
       if (origin === 'post-merge-reduction' || origin === 'post-merge-resolution') return;
-      
+
       // Trigger debounced reduction and GC
       if (reductionTimeout) clearTimeout(reductionTimeout);
       reductionTimeout = setTimeout(() => {
@@ -110,11 +110,13 @@ export class Room {
   }
 
   shareableLink(serverUrl?: string): string {
+    // The encryption key is placed in the URL fragment (after #) so it is
+    // never transmitted to a server — fragments are client-side only.
     let link = `stratigraph://join/${this.config.roomId}`;
     const params: string[] = [];
-    if (this._encryptionKey) params.push(`key=${this._encryptionKey}`);
     if (serverUrl) params.push(`server=${encodeURIComponent(serverUrl)}`);
     if (params.length) link += '?' + params.join('&');
+    if (this._encryptionKey) link += `#key=${this._encryptionKey}`;
     return link;
   }
 
@@ -141,7 +143,7 @@ export class Room {
 
   /**
    * Adds a new sync provider to the room dynamically.
-   * Note for Phase 1: Dynamically-added providers must be wrapped by the signing layer 
+   * Note for Phase 1: Dynamically-added providers must be wrapped by the signing layer
    * to ensure zero-trust security perimeter isn't bypassed by late-connecting peers.
    */
   public addProvider(config: SyncProvider): Promise<{ destroy: () => void }> {
@@ -181,7 +183,7 @@ export class Room {
               this._setStatus(event.status as SyncStatus, this._status.pending);
             }
           });
-          
+
           // Initialize MediaSync CAS transfer engine
           if (this.config.localIdentity) {
             Promise.all([
@@ -221,7 +223,7 @@ export class Room {
   private setupZeroTrustIntercept(config: RoomConfig) {
     // We attach interceptors to this specific document instance
     const originalOn = this.doc.on.bind(this.doc);
-    
+
     // Patch doc.on to intercept 'update' events
     // @ts-ignore
     this.doc.on = (name: string, f: Function) => {

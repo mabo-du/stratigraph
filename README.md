@@ -3,7 +3,7 @@
   <h1>StratiGraph</h1>
   <p><strong>A Modern, AI-Ready Harris Matrix Generator & Digital Heritage Hub</strong></p>
   <p>
-    <img src="https://img.shields.io/badge/version-v1.0.8-4a9e6f" alt="Version">
+    <img src="https://img.shields.io/badge/version-v1.1.0-4a9e6f" alt="Version">
     <img src="https://img.shields.io/badge/license-MIT-2a3a4a" alt="License">
     <img src="https://img.shields.io/badge/TypeScript-React-3178c6" alt="TypeScript React">
     <img src="https://img.shields.io/badge/tests-16%20suites%20136%20passing-4a9e6f" alt="Tests">
@@ -17,9 +17,9 @@
 ---
 
 <div align="center">
-  <img src="assets/features.gif" alt="StratiGraph Feature Tour — DAG engine, heatmap, publication mode, CSV import, themes, and ecosystem integration" width="800" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+  <img src="assets/screenshot_matrix.png" alt="StratiGraph Feature Tour — DAG engine, heatmap, publication mode, CSV import, themes, and ecosystem integration" width="800" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
   <br>
-  <sub>Feature tour: DAG engine · Finds heatmap · Publication mode · CSV import · Dark/Light themes · Ecosystem</sub>
+  <sub>Main matrix view: DAG engine · Phase groups · Publication mode · Timeline · 3D</sub>
 </div>
 
 StratiGraph is an open-source, cross-platform desktop application for archaeologists to visually construct, validate, and export Harris Matrices — the directed acyclic graphs used to model stratigraphic relationships in every excavation. It runs entirely offline with zero backend dependency, keeping your field data private and secure.

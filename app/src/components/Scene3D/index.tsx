@@ -143,7 +143,7 @@ export const Scene3D: React.FC<Scene3DProps> = ({
     const ref = sceneRef.current;
     if (!ref) return;
 
-    const { scene, meshes } = ref;
+    const { scene, meshes, camera, controls } = ref;
 
     // Remove old meshes
     meshes.forEach((mesh) => {
@@ -157,22 +157,42 @@ export const Scene3D: React.FC<Scene3DProps> = ({
     });
     meshes.clear();
 
-    // Find bounds for sizing
+    // Find bounds for sizing and auto-centering
     const spatialContexts = contexts.filter(
       (c): c is Context & { spatial: NonNullable<Context['spatial']> & { centroid: NonNullable<NonNullable<Context['spatial']>['centroid']> } } =>
         !!c.spatial?.centroid
     );
     if (spatialContexts.length === 0) return;
 
-    const zValues = spatialContexts.map(c => c.spatial.centroid.z ?? 0);
-    const minZ = Math.min(...zValues);
-    const maxZ = Math.max(...zValues);
-    const zRange = Math.max(maxZ - minZ, 1);
+    const xs = spatialContexts.map(c => c.spatial.centroid.x);
+    const ys = spatialContexts.map(c => c.spatial.centroid.y);
+    const zs = spatialContexts.map(c => c.spatial.centroid.z ?? 0);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const minZ = Math.min(...zs);
+    const maxZ = Math.max(...zs);
+    const rangeX = Math.max(maxX - minX, 1);
+    const rangeY = Math.max(maxY - minY, 1);
+    const rangeZ = Math.max(maxZ - minZ, 1);
+    const maxRange = Math.max(rangeX, rangeY, rangeZ);
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const centerZ = (minZ + maxZ) / 2;
 
-    // Add new meshes
+    // Reset camera to sensible default position centered on data
+    const scale = 8 / maxRange; // fit data into ~8 unit box
+    camera.position.set(10, 8, 10);
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    // Add new meshes (normalized to origin-centered coordinates)
     spatialContexts.forEach((ctx) => {
       const { x = 0, y = 0, z = 0 } = ctx.spatial.centroid;
-      const height = Math.max((z - minZ) / zRange * 2 + 0.3, 0.3);
+      const nx = (x - centerX) * scale;
+      const ny = (y - centerY) * scale;
+      const height = Math.max((z - minZ) / rangeZ * 2 + 0.3, 0.3);
 
       const geo = new THREE.BoxGeometry(1, height, 1);
       const color = new THREE.Color(getPhaseColor(ctx.phase, phases));
@@ -184,7 +204,8 @@ export const Scene3D: React.FC<Scene3DProps> = ({
         opacity: 0.85,
       });
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(x, height / 2, y);
+      // Normalized x→X, y→Z (horizontal plane), z→Y (elevation)
+      mesh.position.set(nx, height / 2 + (z - minZ) / rangeZ * 2 - 1, ny);
       mesh.userData.contextId = ctx.id;
       scene.add(mesh);
       meshes.set(ctx.id, mesh);

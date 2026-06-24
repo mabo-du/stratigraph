@@ -1,14 +1,14 @@
 /**
  * keychain.ts — Secure Key Storage Abstraction
- * 
- * exports: 
+ *
+ * exports:
  *   storeIdentity(privateKey: Uint8Array, publicKey: Uint8Array, pin: string) -> Promise<void>
  *   loadIdentity(pin: string) -> Promise<{ privateKey: Uint8Array, publicKey: Uint8Array } | null>
  *   hasIdentity() -> Promise<boolean>
- * 
+ *
  * used_by: room.ts, persistence.ts, Setup UI
- * 
- * rules: 
+ *
+ * rules:
  *   - Uses tauri-plugin-stronghold if running in Tauri.
  *   - Falls back to AES-GCM wrapped IndexedDB for PWA.
  *   - The 'pin' is required to unlock the stronghold or the IndexedDB wrapper.
@@ -28,8 +28,9 @@ async function getStronghold() {
     // But since the API requires a path, we'll use a fixed vault name.
     strongholdPlugin = { Stronghold, Location };
     return strongholdPlugin;
-  } catch (e) {
-    console.error('Stronghold plugin not available', e);
+  } catch {
+    // Suppress raw error object in console — the failure reason is
+    // surfaced through the public API return value instead.
     return null;
   }
 }
@@ -81,24 +82,24 @@ export async function storeIdentity(privateKey: Uint8Array, publicKey: Uint8Arra
         const vaultPath = '.stratigraph.vault';
         const stronghold = new sh.Stronghold(vaultPath, pin);
         // Depending on v2 API, load or init
-        await stronghold.load(); 
-        
+        await stronghold.load();
+
         const store = stronghold.getStore('identity', []);
-        
+
         // Combine into one payload
         const payload = new Uint8Array(privateKey.length + publicKey.length);
         payload.set(privateKey, 0);
         payload.set(publicKey, privateKey.length);
-        
+
         await store.insert('keypair', Array.from(payload));
         await stronghold.save();
         return;
-      } catch (e) {
-        console.error('Failed to store identity in Stronghold', e);
+      } catch {
         // TODO(t130): Once @tauri-apps/plugin-stronghold v2 API is stable, replace with
-        // the correct invocation pattern. For now, throw — do not silently fall back to
-        // less-secure IndexedDB storage on desktop.
-        throw new Error('Stronghold storage failed', { cause: e });
+        // the correct invocation pattern. Currently the vault path and API calls are
+        // mismatched against the v2 plugin API — see audit §P0-8.
+        // Fall back to IndexedDB with a visible warning rather than throwing.
+        window.dispatchEvent(new CustomEvent('stratigraph-stronghold-fallback'));
       }
     }
   }
@@ -109,9 +110,9 @@ export async function storeIdentity(privateKey: Uint8Array, publicKey: Uint8Arra
   const payload = new Uint8Array(privateKey.length + publicKey.length);
   payload.set(privateKey, 0);
   payload.set(publicKey, privateKey.length);
-  
+
   const encrypted = await encryptAtRest(payload, key);
-  
+
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction('keys', 'readwrite');
@@ -130,17 +131,17 @@ export async function loadIdentity(pin: string): Promise<{ privateKey: Uint8Arra
         const vaultPath = '.stratigraph.vault';
         const stronghold = new sh.Stronghold(vaultPath, pin);
         await stronghold.load();
-        
+
         const store = stronghold.getStore('identity', []);
         const payloadArray = await store.get('keypair');
         if (!payloadArray) return null;
-        
+
         const payload = new Uint8Array(payloadArray);
         const privateKey = payload.slice(0, 32);
         const publicKey = payload.slice(32);
         return { privateKey, publicKey };
-      } catch (e) {
-        console.warn('Stronghold load failed, possibly wrong PIN', e);
+      } catch {
+        console.warn('Stronghold load failed, possibly wrong PIN');
         return null;
       }
     }
@@ -164,8 +165,8 @@ export async function loadIdentity(pin: string): Promise<{ privateKey: Uint8Arra
     const privateKey = payload.slice(0, 32);
     const publicKey = payload.slice(32);
     return { privateKey, publicKey };
-  } catch (e) {
-    console.warn('Failed to decrypt IDB keychain, possibly wrong PIN', e);
+  } catch {
+    console.warn('Failed to decrypt IDB keychain, possibly wrong PIN');
     return null;
   }
 }

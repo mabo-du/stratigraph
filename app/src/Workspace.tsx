@@ -32,6 +32,7 @@ export interface WorkspaceProps {
     users: any[];
     shareableLink: string;
     startSession: () => void;
+    joinSession: (roomId: string, key: string) => void;
     leaveSession: () => void;
   };
 }
@@ -494,7 +495,7 @@ export function Workspace({ collab }: WorkspaceProps) {
     try {
       const jsonStr = exportArchesJson(state.contexts, state.observations);
       const safeName = state.meta.projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      
+
       const success = await saveFileDialog(jsonStr, {
         defaultName: `${safeName}_arches.json`,
         filters: [{ name: 'ArchesDB JSON', extensions: ['json'] }]
@@ -585,6 +586,7 @@ export function Workspace({ collab }: WorkspaceProps) {
         collabPending={0}
         collabShareableLink={collab.shareableLink}
         onStartSession={collab.startSession}
+        onJoinSession={collab.joinSession}
         onLeaveSession={collab.leaveSession}
         showPaleo={showPaleo}
         onTogglePaleo={() => setShowPaleo(prev => !prev)}
@@ -665,14 +667,22 @@ export function Workspace({ collab }: WorkspaceProps) {
       {/* Import Modal */}
       {state.showImportModal && (
         <div
-          className="modal-overlay"
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.4)',
+          }}
           onClick={e => {
             if (e.target === e.currentTarget) {
               dispatch({ type: 'TOGGLE_IMPORT_MODAL', open: false });
             }
           }}
         >
-          <div className="modal-panel">
+          <div style={{
+            background: 'var(--surface-0, #fff)', borderRadius: 12,
+            maxWidth: 680, width: '90%', maxHeight: '85vh', overflow: 'auto',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          }}>
             <ImportEngine
               onDataLoaded={handleImportData}
               onClose={() => dispatch({ type: 'TOGGLE_IMPORT_MODAL', open: false })}
@@ -718,5 +728,3 @@ export function Workspace({ collab }: WorkspaceProps) {
     </div>
   );
 }
-
-

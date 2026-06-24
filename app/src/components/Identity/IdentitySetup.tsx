@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateIdentity, exportEncryptedBackup } from '../../security/crypto';
 import { storeIdentity } from '../../security/keychain';
 import { saveFileDialog } from '../../utils/tauriBridge';
@@ -16,6 +16,15 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
   const [keypair, setKeypair] = useState<{ publicKey: Uint8Array, privateKey: Uint8Array } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showFallbackWarning, setShowFallbackWarning] = useState(false);
+
+  // Listen for the Stronghold → IndexedDB fallback event dispatched by
+  // keychain.ts when secure hardware storage is unavailable on desktop.
+  useEffect(() => {
+    const handler = () => setShowFallbackWarning(true);
+    window.addEventListener('stratigraph-stronghold-fallback', handler);
+    return () => window.removeEventListener('stratigraph-stronghold-fallback', handler);
+  }, []);
 
   const handleGenerate = () => {
     if (pin.length < 6) {
@@ -73,7 +82,16 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl max-w-lg w-full">
-        
+
+        {showFallbackWarning && (
+          <div className="mb-4 p-3 rounded bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-sm text-amber-800 dark:text-amber-200">
+            <LucideAlertTriangle className="w-4 h-4 inline mr-2 text-amber-600" />
+            Secure hardware storage (Stronghold) is unavailable on this device.
+            Your identity will be stored using browser-based encryption
+            (IndexedDB) instead. This is less secure but still functional.
+          </div>
+        )}
+
         {step === 'intro' && (
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400">
@@ -86,7 +104,7 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
             <p className="text-gray-600 dark:text-gray-300">
               You will need to create a secure passphrase to protect your identity.
             </p>
-            <button 
+            <button
               onClick={() => setStep('generate')}
               className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded"
             >
@@ -101,20 +119,20 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               This passphrase unlocks your identity on this device and protects your backup. Do not forget it.
             </p>
-            <input 
-              type="password" 
-              placeholder="Enter Passphrase (min 6 chars)" 
+            <input
+              type="password"
+              placeholder="Enter Passphrase (min 6 chars)"
               className="w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600"
-              value={pin} onChange={(e) => setPin(e.target.value)} 
+              value={pin} onChange={(e) => setPin(e.target.value)}
             />
-            <input 
-              type="password" 
-              placeholder="Confirm Passphrase" 
+            <input
+              type="password"
+              placeholder="Confirm Passphrase"
               className="w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600"
-              value={confirmPin} onChange={(e) => setConfirmPin(e.target.value)} 
+              value={confirmPin} onChange={(e) => setConfirmPin(e.target.value)}
             />
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <button 
+            <button
               onClick={handleGenerate}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded"
             >
@@ -133,8 +151,8 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
               </p>
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            
-            <button 
+
+            <button
               onClick={handleExportBackup}
               disabled={isExporting}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded flex items-center justify-center gap-2"
@@ -143,7 +161,7 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
               {isExporting ? 'Exporting...' : 'Export Encrypted Backup'}
             </button>
 
-            <button 
+            <button
               onClick={() => setStep('bypass_warning')}
               className="w-full text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm underline mt-2"
             >
@@ -164,21 +182,21 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
             <p className="text-sm font-semibold">
               Type 'I UNDERSTAND THE RISK' to proceed without a backup.
             </p>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full border p-2 rounded uppercase dark:bg-gray-700 dark:border-gray-600"
-              value={bypassText} onChange={(e) => setBypassText(e.target.value)} 
+              value={bypassText} onChange={(e) => setBypassText(e.target.value)}
             />
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            
+
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={() => setStep('backup')}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 rounded"
               >
                 Go Back
               </button>
-              <button 
+              <button
                 onClick={handleBypassConfirm}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded"
               >
@@ -197,7 +215,7 @@ export const IdentitySetup: React.FC<IdentitySetupProps> = ({ onComplete }) => {
             <p className="text-gray-600 dark:text-gray-300">
               Your device identity is secured and ready for fieldwork.
             </p>
-            <button 
+            <button
               onClick={onComplete}
               className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded"
             >

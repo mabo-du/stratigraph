@@ -375,11 +375,11 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
   );
 
   const saveChanges = () => {
-    onUpdate({ 
-      ...context, 
-      description: desc || undefined, 
-      type, 
-      phase: phase || undefined, 
+    onUpdate({
+      ...context,
+      description: desc || undefined,
+      type,
+      phase: phase || undefined,
       photoUrl: photoUrl || undefined,
       mediaRefs: mediaRefs.length > 0 ? mediaRefs : undefined,
     });
@@ -439,7 +439,7 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
     <div className="sidebar-section">
       <div className="sidebar-header">
         <button className="icon-btn" onClick={onBack} title="Back to unit list">
-          ← 
+          ←
         </button>
         <span className="sidebar-header-title" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem' }}>
           {context.id}
@@ -515,11 +515,18 @@ const NodeEditor: React.FC<NodeEditorProps> = ({
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
             </label>
           </div>
-          {(resolvedMediaUrl || photoUrl) && (
-            <div style={{ marginTop: 8, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
-              <img src={resolvedMediaUrl || photoUrl} alt="Context preview" style={{ display: 'block', width: '100%', maxHeight: 150, objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            </div>
-          )}
+          {(resolvedMediaUrl || photoUrl) && (() => {
+            const src = resolvedMediaUrl || photoUrl;
+            // Only allow http:, https:, and blob: schemes to prevent
+            // javascript: or data: URI injection via user-supplied URLs.
+            const allowed = /^(https?:|blob:)/i.test(src);
+            if (!allowed) return null;
+            return (
+              <div style={{ marginTop: 8, borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                <img src={src} alt="Context preview" style={{ display: 'block', width: '100%', maxHeight: 150, objectFit: 'cover' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+            );
+          })()}
           {(!resolvedMediaUrl && mediaRefs.length > 0) && (
             <div style={{ marginTop: 8, padding: 12, borderRadius: 4, background: 'var(--bg-2)', border: '1px dashed var(--border)', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-2)' }}>
               <span className="sync-spinner" style={{ display: 'inline-block', marginRight: 8, animation: 'spin 2s linear infinite' }}>↻</span>

@@ -4,99 +4,34 @@
 
 ## Quick Reference
 
-- **Build**: `cd app && npm run build` (tsc -b && vite build)
+- **Build**: `cd app && npm run build`
 - **Dev**: `cd app && npm run dev`
-- **Test**: `cd app && npm run test` (vitest — 16 test suites, 136 tests, all passing)
+- **Test**: `cd app && npm run test`
 - **Lint**: `cd app && npm run lint`
-- **Preview**: `cd app && npm run preview`
-- **Desktop dev**: `cd app && npm run tauri:dev` (Tauri + Vite hot-reload)
-- **Desktop build**: `cd app && npm run tauri:build` (produces .deb ~8MB, .dmg ~7MB, .exe ~4MB)
-- **PWA**: App auto-registers service worker in production builds; installable via browser prompt
-- **Deploy**: `git push` triggers `.github/workflows/deploy.yml`
 
-## Project Overview
+## Project
 
-StratiGraph is a browser-based Harris Matrix generator for archaeological
-stratigraphy — a React + TypeScript + Vite SPA. It allows field archaeologists
-to construct, validate, and export stratigraphic sequences (directed acyclic
-graphs) with no backend dependency. Data is stored as portable `.hmatrix.json`
-files.
-
-The app implements the **Harris Matrix Data Package (HMDP)** standard and
-integrates with three sister projects in the digital heritage ecosystem:
-
-| Project | Role | Location |
-|---------|------|----------|
-| **HOARD** | AI context-sheet digitisation (Phases 0-5) | `~/Projects/HOARD` |
-| **Trowel** | Compliance report drafting from field data | `~/Projects/trowel` |
-| **Libby** | Bayesian radiocarbon calibration | `~/Projects/Libby` |
-
-See `docs/scope.md` for the original project scope and `README.md` for the
-full feature list.
+Browser-based Harris Matrix generator for archaeological stratigraphy.
+React + TypeScript + Vite SPA. Zero backend. Portable `.hmatrix.json` files.
+Pure DAG model with Cytoscape.js rendering. Tauri v2 desktop wrapper.
 
 ## Architecture
 
 ```
-app/
-├── src/                     # React + TypeScript frontend
-│   ├── models/              # HMDP data types, DAG engine, OxCal export, HOARD I/O
-│   │   ├── hmdp.ts              — Context, Observation, Phase, Event, SpatialMetadata
-│   │   ├── graphLogic.ts        — Cycle detection, transitive reduction (Dye & Buck)
-│   │   ├── bayesianLogic.ts     — OxCal CQL script generation
-│   │   ├── hoardImporter.ts     — HOARD Phase 1 JSON import + inference engine
-│   │   ├── hoardExport.ts       — EEDP path extraction for hallucination-free AI
-│   │   ├── matrixState.ts       — State types + actions (undo/redo)
-│   │   └── *.test.ts            — 7 test files covering all modules
-│   ├── hooks/
-│   │   └── useMatrixStore.ts    — useReducer central store with undo/redo
-│   ├── components/
-│   │   ├── MatrixCanvas/        — Cytoscape.js DAG renderer (Dagre layout)
-│   │   ├── Toolbar/             — Top toolbar (import/export/save/load/views)
-│   │   ├── Sidebar/             — Unit list, node editor, phase management
-│   │   ├── ImportEngine/        — CSV wizard + HOARD JSON import with column mapping
-│   │   └── SearchOverlay/       — Ctrl+F palette
-│   └── utils/
-│       ├── csvParser.ts         — PapaParse-based CSV import with flexible column mapping
-│       ├── fileUtils.ts         — .hmatrix.json save/load, GeoJSON/PNG/SVG/PDF export
-│       ├── tauriBridge.ts       — Tauri native dialog bridge with browser fallback
-│       └── cytoscapeHelpers.ts  — Element builders, style generators
-├── src-tauri/               # Tauri v2 Rust backend (desktop builds)
-│   ├── src/lib.rs               — Tauri app setup with dialog + fs plugins
-│   ├── Cargo.toml               — Rust dependencies
-│   ├── tauri.conf.json          — Window config, bundle targets, security
-│   └── capabilities/default.json — Permission grants (dialog, fs)
-├── package.json
-└── vite.config.ts
+app/src/
+├── models/          — HMDP types, DAG engine, graph logic, bayesian export
+├── hooks/           — useMatrixStore (reducer + undo/redo)
+├── components/      — MatrixCanvas, Toolbar, Sidebar, ImportEngine
+├── collaboration/   — CollaborationBar, ShareDialog, JoinDialog, useCollaboration
+├── security/        — crypto, keychain (Stronghold → IndexedDB fallback)
+└── utils/           — fileUtils, csvParser, tauriBridge, cytoscapeHelpers
+app/src-tauri/       — Rust backend (axum relay, mDNS discovery, Stronghold)
+packages/            — @stratigraph/sync, @stratigraph/sync-react
 ```
-
-**Key architectural decisions:**
-- Pure DAG model separate from visual representation (graphLogic.ts)
-- Frictionless HMDP data standard for interoperability
-- Cycle detection via DFS on every relationship addition
-- Transitive reduction (Dye & Buck) at import time
-- EEDP extraction prevents topological hallucinations in AI pipelines
-- Undo/redo via command pattern (50-deep stack)
-- Zero backend — runs entirely in the browser
-- PWA: auto-registered service worker with Workbox precaching; offline-capable via IndexedDB project persistence
-- Tauri v2 desktop wrapper (Rust + OS-native WebView) enables offline fieldwork with native file dialogs
-- Release bundles: ~8 MB .deb, ~7 MB .dmg, ~4 MB .exe NSIS installer
 
 ## Conventions
 
-- Commits: [Conventional Commits](https://www.conventionalcommits.org/)
-- Branches: `feature/`, `bugfix/`, `hotfix/`, `refactor/`, `chore/`
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `.agents/AGENTS.md` | Project-specific agent instructions |
-| `TODO.md` | Task tracking |
-| `CHANGELOG.md` | Version history |
-| `app/src-tauri/` | Tauri v2 desktop build (Rust backend, native dialogs) |
-| `app/src/utils/tauriBridge.ts` | Tauri<->browser bridge with native file dialog fallback |
-| `app/src/utils/offlineStorage.ts` | IndexedDB-backed offline project persistence |
-| `app/src/utils/trowelExport.ts` | Trowel-compatible EEDP JSON export |
+- Commits: Conventional Commits  |  Branches: `feature/`, `bugfix/`, `refactor/`, `chore/`
 
 <!-- AI-CONTEXT-END -->
 

@@ -15,6 +15,7 @@ interface CollaborationBarProps {
   collaborators: Collaborator[];
   pendingChanges: number;
   onCopyLink: () => void;
+  onJoinClick: () => void;
   onStartSession: () => void;
   onLeaveSession: () => void;
   onShowUsers: () => void;
@@ -40,6 +41,7 @@ export function CollaborationBar({
   collaborators,
   pendingChanges,
   onCopyLink,
+  onJoinClick,
   onStartSession,
   onLeaveSession,
   onShowUsers,
@@ -65,18 +67,33 @@ export function CollaborationBar({
       );
     }
     return (
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '4px 12px', borderRadius: 6,
-          border: `1px solid ${color}`,
-          color, fontSize: '0.8rem', cursor: 'pointer',
-        }}
-        onClick={onStartSession}
-        title="Start collaboration session"
-      >
-        <WifiOff size={14} />
-        <span>Collaborate</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '4px 12px', borderRadius: 6,
+            border: `1px solid ${color}`,
+            color, fontSize: '0.8rem', cursor: 'pointer',
+          }}
+          onClick={onStartSession}
+          title="Start collaboration session"
+        >
+          <WifiOff size={14} />
+          <span>Collaborate</span>
+        </div>
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '4px 8px', borderRadius: 6,
+            border: '1px solid var(--border-2)',
+            color: 'var(--text-2)', fontSize: '0.8rem', cursor: 'pointer',
+          }}
+          onClick={onJoinClick}
+          title="Join an existing session"
+        >
+          <Link size={14} />
+          <span>Join</span>
+        </div>
       </div>
     );
   }

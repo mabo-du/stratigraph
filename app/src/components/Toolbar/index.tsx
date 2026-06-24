@@ -5,13 +5,14 @@
 import React, { useRef, useState } from 'react';
 import {
   Undo2, Redo2, LayoutDashboard, Upload, Save, FolderOpen,
-  Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun, 
+  Download, ChevronDown, Maximize2, BoxSelect, Moon, Sun,
   Grid3X3, Flame, FileText, HardDrive, Timer, Globe, Braces
 } from 'lucide-react';
 import type { PublicationTemplate } from '../../utils/cytoscapeHelpers';
 import type { SyncStatus } from '@stratigraph/sync';
 import { CollaborationBar } from '../../collaboration/CollaborationBar';
 import { ShareDialog } from '../../collaboration/ShareDialog';
+import { JoinDialog } from '../../collaboration/JoinDialog';
 import { AwarenessPanel } from '../../collaboration/AwarenessPanel';
 
 interface Collaborator {
@@ -78,6 +79,7 @@ interface ToolbarProps {
   collabPending: number;
   collabShareableLink: string;
   onStartSession: () => void;
+  onJoinSession: (roomId: string, key: string) => void;
   onLeaveSession: () => void;
 }
 
@@ -137,6 +139,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   collabPending,
   collabShareableLink,
   onStartSession,
+  onJoinSession,
   onLeaveSession,
 }) => {
   const [editingName, setEditingName] = useState(false);
@@ -144,6 +147,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showTemplateMenu, setShowTemplateMenu] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showAwareness, setShowAwareness] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -320,7 +324,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </div>
 
         <div className="toolbar-divider" />
-        
+
         {/* Visuals */}
         <div className="toolbar-group">
           <button
@@ -525,6 +529,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             collaborators={collabUsers}
             pendingChanges={collabPending}
             onCopyLink={() => setShowShareDialog(true)}
+            onJoinClick={() => setShowJoinDialog(true)}
             onStartSession={onStartSession}
             onLeaveSession={onLeaveSession}
             onShowUsers={() => setShowAwareness(v => !v)}
@@ -540,6 +545,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         open={showShareDialog}
         onClose={() => setShowShareDialog(false)}
         shareableLink={collabShareableLink}
+      />
+      <JoinDialog
+        open={showJoinDialog}
+        onClose={() => setShowJoinDialog(false)}
+        onJoin={onJoinSession}
       />
     </header>
   );

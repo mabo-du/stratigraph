@@ -28,14 +28,14 @@ function downloadBlob(blob: Blob, filename: string) {
 let lastOfflineId: string | null = null;
 
 export async function saveProject(state: MatrixState) {
+  // NOTE: roomId, roomKey, and syncServer are intentionally excluded from
+  // exported project files — writing the collaboration encryption key into
+  // the file would leak it to anyone the file is shared with.
   const exportData = {
     projectName: state.meta.projectName,
     siteName: state.meta.siteName,
     excavationYear: state.meta.excavationYear,
     notes: state.meta.notes,
-    roomId: state.meta.roomId,
-    roomKey: state.meta.roomKey,
-    syncServer: state.meta.syncServer,
     contexts: state.contexts,
     observations: state.observations,
     phases: state.phases,
@@ -105,9 +105,11 @@ export async function loadProject(
       siteName: data.siteName ?? '',
       excavationYear: data.excavationYear ?? '',
       notes: data.notes ?? '',
-      roomId: data.roomId ?? undefined,
-      roomKey: data.roomKey ?? undefined,
-      syncServer: data.syncServer ?? undefined,
+      // Collaboration keys are no longer restored from file exports —
+      // they are stored in the keychain/IndexedDB vault instead.
+      roomId: undefined,
+      roomKey: undefined,
+      syncServer: undefined,
     },
     contexts: data.contexts ?? [],
     observations: data.observations ?? [],
@@ -170,7 +172,7 @@ export function exportSVGFallback(cy: Core, projectName: string) {
 export function exportPDF(cy: Core, projectName: string) {
   // Generate a high-resolution PNG of the graph
   const png64 = cy.png({ full: true, scale: 2, bg: '#0b0e11' });
-  
+
   // Create an A3 landscape PDF
   const doc = new jsPDF({
     orientation: 'landscape',
@@ -182,7 +184,7 @@ export function exportPDF(cy: Core, projectName: string) {
   doc.setFontSize(16);
   doc.setTextColor(40, 40, 40);
   doc.text(projectName || 'Harris Matrix', 15, 20);
-  
+
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
   doc.text(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 15, 26);
@@ -211,7 +213,7 @@ export function exportPDF(cy: Core, projectName: string) {
 
   // Draw the image
   doc.addImage(png64, 'PNG', margin, startY, finalWidth, finalHeight);
-  
+
   const safeName = projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
   doc.save(`${safeName}_matrix.pdf`);
 }
@@ -240,7 +242,7 @@ export function buildGeoJSON(state: MatrixState, targetCrs: 'EPSG:4326' | 'EPSG:
     }
 
     const sourceCrs = ctx.spatial.crs || 'EPSG:4326';
-    
+
     // Start with the geometry we have
     let geometry = ctx.spatial.geoJSON;
     if (!geometry && ctx.spatial.centroid) {
